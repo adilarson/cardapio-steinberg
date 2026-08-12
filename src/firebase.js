@@ -1,21 +1,20 @@
 import { initializeApp } from "firebase/app";
-import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
-// Suas credenciais reais do Firebase Console
+// As chaves agora são puxadas de forma oculta pelo Vite através do import.meta.env
 const firebaseConfig = {
-  apiKey: "AIzaSyA3STspLuSTkS1ipsi8lc7loi9x1pX_uVI",
-  authDomain: "cardapio-steinberg.firebaseapp.com",
-  projectId: "cardapio-steinberg",
-  storageBucket: "cardapio-steinberg.firebasestorage.app",
-  messagingSenderId: "271355504630",
-  appId: "1:271355504630:web:2abe89da6abcde872bc9d7"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializa e exporta o Banco de Dados Firestore
-export const db = initializeFirestore(app, {
-  experimentalAutoDetectLongPolling: true,
-  localCache: persistentLocalCache()
-});
+// Exporta as conexões com o Banco de Dados e com a Autenticação
+export const db = getFirestore(app);
+export const auth = getAuth(app);
