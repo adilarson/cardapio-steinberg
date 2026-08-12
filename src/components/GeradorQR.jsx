@@ -2,13 +2,12 @@ import React from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useEmpresa } from "../context/EmpresaContext";
 
-export default function GeradorQR() {
+export default function GeradorQR({ totalMesasManual }) {
     const { empresa } = useEmpresa();
     
-    // Gera dinamicamente até a quantidade de mesas cadastrada ou 50 por padrão
-    const mesas = Array.from({ length: 50 }, (_, i) => i + 1);
-    
-    // Captura o domínio do Netlify ou local automaticamente
+    // Agora ele prioriza o que o usuário está digitando na tela em tempo real!
+    const totalDeMesas = totalMesasManual ? Number(totalMesasManual) : (empresa?.totalMesas ? Number(empresa.totalMesas) : 50);
+    const mesas = Array.from({ length: totalDeMesas }, (_, i) => i + 1);
     const dominio = window.location.origin;
 
     if (!empresa) {
@@ -18,15 +17,20 @@ export default function GeradorQR() {
             </div>
         );
     }
-
+    
     return (
-        <div className="min-h-screen bg-stone-100 p-8">
+        <div className="bg-stone-100 p-2">
             <div className="max-w-7xl mx-auto">
-                {/* Cabeçalho - Escondido ao imprimir para economizar papel */}
+                {/* Cabeçalho do painel de QR Codes */}
                 <div className="flex justify-between items-center mb-8 print:hidden">
-                    <h1 className="text-3xl font-bold text-amber-900">
-                        Gerador de QR Codes
-                    </h1>
+                    <div>
+                        <h2 className="text-2xl font-bold text-amber-900">
+                            QR Codes Gerados
+                        </h2>
+                        <p className="text-sm text-stone-500">
+                            Exibindo {totalDeMesas} mesas configuradas para este estabelecimento.
+                        </p>
+                    </div>
                     <button
                         onClick={() => window.print()}
                         className="bg-amber-900 hover:bg-amber-950 text-white px-6 py-3 rounded-xl font-bold shadow transition"
@@ -39,8 +43,6 @@ export default function GeradorQR() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 print:grid-cols-3 print:gap-4">
                     {mesas.map((mesa) => {
                         const numero = String(mesa).padStart(2, "0");
-                        
-                        // CORREÇÃO CRÍTICA: Agora inclui o slug dinâmico na rota!
                         const url = `${dominio}/${empresa.slug}?mesa=${numero}`;
                         
                         return (

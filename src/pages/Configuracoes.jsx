@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, onSnapshot, addDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { useEmpresa } from "../context/EmpresaContext";
 import GeradorQR from "../components/GeradorQR";
 
 export default function Configuracoes() {
   const { empresa } = useEmpresa();
   const [configuradores, setConfiguradores] = useState([]);
+  const [quantidadeMesas, setQuantidadeMesas] = useState(50); // 50 como padrão inicial
+  const [salvandoMesas, setSalvandoMesas] = useState(false);
   const [novo, setNovo] = useState({
     nome: "",
     tipo: "radio",
@@ -16,6 +18,11 @@ export default function Configuracoes() {
   useEffect(() => {
     if (!empresa?.id) return;
 
+    // Atualiza o estado local se a empresa já tiver uma quantidade de mesas salva no banco
+    if (empresa.totalMesas) {
+      setQuantidadeMesas(empresa.totalMesas);
+    }
+
     const unsub = onSnapshot(collection(db, "restaurantes", empresa.id, "configuradores"), (snapshot) => {
       const lista = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -24,7 +31,24 @@ export default function Configuracoes() {
       setConfiguradores(lista);
     });
     return () => unsub();
-  }, [empresa?.id]);
+  }, [empresa?.id, empresa?.totalMesas]);
+
+  const salvarTotalMesas = async () => {
+    if (!empresa?.id) return;
+    setSalvandoMesas(true);
+    try {
+      // Salva a quantidade de mesas direto no documento principal do restaurante
+      await updateDoc(doc(db, "restaurantes", empresa.id), {
+        totalMesas: Number(quantidadeMesas)
+      });
+      alert("Quantidade de mesas atualizada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar quantidade de mesas:", error);
+      alert("Erro ao salvar as mesas.");
+    } finally {
+      setSalvandoMesas(false);
+    }
+  };
 
   const adicionar = async () => {
     if (!novo.nome || !empresa?.id) return;
@@ -60,9 +84,34 @@ export default function Configuracoes() {
 
   return (
     <div className="min-h-screen bg-stone-100 p-6">
+      
       {/* O print:hidden esconde essa parte administrativa na hora de imprimir os códigos das mesas */}
       <div className="print:hidden">
-        <h1 className="text-3xl font-bold mb-6">Configuradores</h1>
+        <h1 className="text-3xl font-bold mb-6">Configurações do Restaurante</h1>
+
+        {/* NOVO BLOCO: Gerenciamento do Total de Mesas do SaaS */}
+        <div className="bg-white rounded-xl shadow p-6 mb-8">
+          <h2 className="font-bold text-xl mb-2">Estrutura de Mesas</h2>
+          <p className="text-sm text-stone-500 mb-4">Defina o total de mesas do estabelecimento para gerar os QR Codes corretamente.</p>
+          <div className="flex gap-4 max-w-md">
+            <input
+              type="number"
+              min="1"
+              max="200"
+              className="border rounded-lg p-3 flex-1"
+              value={quantidadeMesas}
+              onChange={(e) => setQuantidadeMesas(e.target.value)}
+            />
+            <button 
+              onClick={salvarTotalMesas} 
+              disabled={salvandoMesas}
+              className="bg-stone-800 hover:bg-stone-900 text-white rounded-lg px-6 font-bold disabled:opacity-50"
+            >
+              {salvandoMesas ? "Salvando..." : "Salvar Total"}
+            </button>
+          </div>
+        </div>
+
         <div className="bg-white rounded-xl shadow p-6 mb-8">
           <h2 className="font-bold text-xl mb-4">Novo Configurador</h2>
           <div className="grid gap-4">
@@ -94,6 +143,7 @@ export default function Configuracoes() {
             </button>
           </div>
         </div>
+
         <div className="space-y-4 mb-8">
           {configuradores.map(config => (
             <div key={config.id} className="bg-white rounded-xl shadow p-5">
@@ -126,9 +176,9 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      {/* ADICIONADO AQUI NO FINAL DO ARQUIVO: O componente gerador de QR Code original corrigido */}
+     {/* COMPONENTE GERADOR: Fica no final e agora vai ler o total automaticamente */}
       <div className="mt-8 border-t border-stone-300 pt-8">
-        <GeradorQR />
+       <GeradorQR totalMesasManual={quantidadeMesas} />
       </div>
     </div>
   );
