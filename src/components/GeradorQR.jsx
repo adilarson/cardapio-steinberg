@@ -17,7 +17,7 @@ export default function GeradorQR({ totalMesasManual }) {
             </div>
         );
     }
-    
+
     return (
         <div className="bg-stone-100 p-2">
             <div className="max-w-7xl mx-auto">
@@ -32,11 +32,12 @@ export default function GeradorQR({ totalMesasManual }) {
                         </p>
                     </div>
                     <button
-                        onClick={() => window.print()}
-                        className="bg-amber-900 hover:bg-amber-950 text-white px-6 py-3 rounded-xl font-bold shadow transition"
+                      onClick={() => window.print()}
+                      className="bg-amber-900 hover:bg-amber-950 text-white px-6 py-3 rounded-xl font-bold shadow transition"
                     >
-                        🖨️ Imprimir Todos os QR Codes
-                    </button>
+                     📄 Salvar em PDF / Imprimir QR Codes
+                  </button>
+
                 </div>
 
                 {/* Grid de Impressão */}
