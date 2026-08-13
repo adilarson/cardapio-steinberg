@@ -15,6 +15,8 @@ import Configuracoes from "./pages/Configuracoes";
 import Assinatura from "./pages/Assinatura";
 import ConfigurarProduto from "./pages/ConfigurarProduto";
 import RestaurantesMaster from "./pages/RestaurantesMaster"; 
+import MasterAdmin from "./pages/MasterAdmin";
+
 
 export default function App() {
   return (
@@ -23,6 +25,7 @@ export default function App() {
         <Routes>
           {/* 1. ROTA MASTER GLOBAL DO SAAS */}
           <Route path="/larson-master" element={<AdminLayout tipo="master"><RestaurantesMaster /></AdminLayout>} />
+          <Route path="/larson-master/admin" element={<AdminLayout tipo="master"><MasterAdmin /></AdminLayout>} />
 
           {/* 2. ROTAS DO CLIENTE FINAL (Cardápio Digital Dinâmico) */}
           <Route path="/:restaurantSlug" element={<Cliente />} />

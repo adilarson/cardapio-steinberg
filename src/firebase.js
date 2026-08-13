@@ -2,7 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// As chaves agora são puxadas de forma oculta pelo Vite através do import.meta.env
+// Puxa as variáveis do arquivo .env.local
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -12,9 +12,12 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Inicializa o Firebase
+// Alerta temporário no console do navegador para te ajudar a descobrir o erro
+if (!firebaseConfig.apiKey) {
+  console.error("🚨 ERRO NO SAAS: O Vite não conseguiu ler o arquivo .env.local. Verifique se o arquivo está na raiz do projeto!");
+}
+
 const app = initializeApp(firebaseConfig);
 
-// Exporta as conexões com o Banco de Dados e com a Autenticação
 export const db = getFirestore(app);
 export const auth = getAuth(app);

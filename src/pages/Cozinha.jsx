@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom"; // CORRIGIDO: Adicionado useParams aqui
+import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../firebase";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { useEmpresa } from "../context/EmpresaContext";
@@ -14,7 +14,7 @@ export default function Cozinha() {
     if (restaurantSlug && (!empresa || empresa.slug !== restaurantSlug)) {
       carregarRestaurantePorSlug(restaurantSlug);
     }
-  }, [restaurantSlug, empresa]);
+  }, [restaurantSlug, empresa, carregarRestaurantePorSlug]);
 
   useEffect(() => {
     if (!empresa?.id) return;
@@ -91,6 +91,11 @@ export default function Cozinha() {
                 </div>
                 <span className="text-xs text-stone-400">{pedido.hora}</span>
               </div>
+              {pedido.observacao && (
+              <div className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold p-2.5 rounded-lg mb-4 italic">
+             📢 OBSERVAÇÃO GERAL: "{pedido.observacao}"
+             </div>
+           )}
               <div className="space-y-4 mb-4 min-h-[80px]">
                 {pedido.itens.map((item, index) => (
                   <div key={index} className="border-b border-stone-700 pb-3">
@@ -99,15 +104,14 @@ export default function Cozinha() {
                       <span className="text-amber-400">R$ {(item.precoFinal ?? item.preco).toFixed(2)}</span>
                     </div>
                     
-                    {/* AJUSTADO: Mapeia 'configuracoes' em vez de 'selecoes' para bater com o configurador */}
                     {item.configuracoes &&
                       Object.entries(item.configuracoes).map(([grupo, valor]) => (
                         <div key={grupo} className="ml-3 mt-1 text-xs text-stone-300">
                           <strong>{grupo}:</strong> {Array.isArray(valor) ? valor.join(", ") : valor}
                         </div>
                       ))}
-                      
-                    {/* AJUSTADO: Mostra a observação do configurador se houver */}
+
+                    {/* Exibe a observação na cozinha caso o Firebase a envie */}
                     {(item.observacao || item.observacaoDoConfigurador) && (
                       <div className="ml-3 mt-2 text-xs italic text-amber-300">
                         📝 {item.observacao || item.observacaoDoConfigurador}
@@ -116,6 +120,7 @@ export default function Cozinha() {
                   </div>
                 ))}
               </div>
+              
               <div className="flex gap-2">
                 {pedido.status === "Pendente" && (
                   <button
