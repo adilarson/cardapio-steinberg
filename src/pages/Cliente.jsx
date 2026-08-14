@@ -225,26 +225,22 @@ const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaAtiva)
 
      <main className="max-w-4xl mx-auto px-4 md:px-8 mt-6">
   
-        {/* BOTÃO DE CONTA INTEGRADO NO TOPO */}
-        <div className="flex justify-end mb-4">
-        <button
-         onClick={() => setMostrarContaMesa(true)}
-          className="bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-serif text-xs font-bold px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 uppercase tracking-wide transition"
-       >
-           📊 Ver Extrato da Mesa
-          </button>
-         </div>
-        <div className="text-center border-b-2 border-stone-800 pb-4 mb-6">
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-[#3d2314] tracking-wide uppercase">
-            {empresa.nome}
-          </h1>
-          <div className="mt-2 inline-block bg-[#3d2314] text-amber-400 font-serif text-[10px] md:text-xs px-5 py-1.5 rounded-full tracking-wider shadow-sm uppercase">
-          📌 Toque em qualquer item para pedir na Mesa {numeroMesa}
-         </div>
+  {/* BOTÃO DE CONTA INTEGRADO NO TOPO - CORRIGIDO PARA setMostrarContaMesa */}
+  <div className="flex justify-end mb-4">
+    <button
+      onClick={() => setMostrarContaMesa(true)}
+      className="bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-serif text-xs font-bold px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 uppercase tracking-wide transition"
+    >
+      📊 Ver Extrato da Mesa
+    </button>
+  </div>
 
-        </div>
-
-       
+  {/* Linha Divisória Compacta e Sem Título Duplicado */}
+  <div className="text-center border-b-2 border-stone-800 pb-4 mb-6">
+    <div className="inline-block bg-[#3d2314] text-amber-400 font-serif text-[10px] md:text-xs px-5 py-1.5 rounded-full tracking-wider shadow-sm uppercase">
+      📌 Toque em qualquer item para pedir na Mesa {numeroMesa}
+      </div>
+      </div>
 
         {categoriaSelecionada && (
           <>
@@ -359,14 +355,14 @@ const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaAtiva)
         removerItem={removerItem}
       />
 
-      {/* MODAL DE CONTA PARCIAL */}
-      {mostrarContaMesa && (
-        <ContaMesa 
-          empresaId={empresa.id} 
-          numeroMesa={numeroMesa} 
-          onClose={() => setMostrarContaMesa(false)} 
-        />
-      )}
+        {/* BLOCCO CORRIGIDO NO FINAL DO CLIENTE.JSX */}
+        {mostrarContaMesa && (
+      <ContaMesa 
+       restaurantSlug={restaurantSlug} 
+       numeroMesa={numeroMesa} 
+       onClose={() => setMostrarContaMesa(false)} 
+      />
+     )}
     </div>
   );
 }
