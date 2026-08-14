@@ -345,24 +345,25 @@ const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaAtiva)
           setProdutoSelecionado(null);
         }}
       />
-
+      {/* O componente do carrinho original mantido */}
       <Carrinho
-        carrinho={carrinho}
-        numeroMesa={numeroMesa}
-        enviarPedidoAoFirebase={enviarPedidoAoFirebase}
-        aumentarQuantidade={aumentarQuantidade}
-        diminuirQuantidade={diminuirQuantidade}
-        removerItem={removerItem}
+         carrinho={carrinho}
+         numeroMesa={numeroMesa}
+         enviarPedidoAoFirebase={enviarPedidoAoFirebase}
+         aumentarQuantidade={aumentarQuantidade}
+         diminuirQuantidade={diminuirQuantidade}
+         removerItem={removerItem}
       />
 
-        {/* BLOCCO CORRIGIDO NO FINAL DO CLIENTE.JSX */}
-        {mostrarContaMesa && (
-      <ContaMesa 
-       restaurantSlug={restaurantSlug} 
-       numeroMesa={numeroMesa} 
-       onClose={() => setMostrarContaMesa(false)} 
-      />
-     )}
+         {/* MODAL DE CONTA PARCIAL - Posicionado de forma independente no final */}
+          {mostrarContaMesa && (
+          <ContaMesa 
+          restaurantSlug={restaurantSlug} 
+          numeroMesa={numeroMesa} 
+          onClose={() => setMostrarContaMesa(false)} 
+        />
+      )}
     </div>
   );
 }
+
