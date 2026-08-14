@@ -229,19 +229,19 @@ const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaAtiva)
         <div className="flex justify-end mb-4">
         <button
          onClick={() => setMostrarContaMesa(true)}
-         className="bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-serif text-xs font-bold px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 uppercase tracking-wide transition"
-     >
-       📊 Ver Extrato / Pedir a Conta
-        </button>
-       </div>
-
+          className="bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-serif text-xs font-bold px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 uppercase tracking-wide transition"
+       >
+           📊 Ver Extrato da Mesa
+          </button>
+         </div>
         <div className="text-center border-b-2 border-stone-800 pb-4 mb-6">
           <h1 className="font-serif text-4xl md:text-5xl font-bold text-[#3d2314] tracking-wide uppercase">
             {empresa.nome}
           </h1>
-          <div className="mt-3 inline-block bg-[#3d2314] text-amber-400 font-serif text-xs px-6 py-2 rounded-full tracking-wide shadow-sm uppercase animate-pulse">
-            📌 Toque em qualquer item para pedir na Mesa {numeroMesa}
-          </div>
+          <div className="mt-2 inline-block bg-[#3d2314] text-amber-400 font-serif text-[10px] md:text-xs px-5 py-1.5 rounded-full tracking-wider shadow-sm uppercase">
+          📌 Toque em qualquer item para pedir na Mesa {numeroMesa}
+         </div>
+
         </div>
 
        
