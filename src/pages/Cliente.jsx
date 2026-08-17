@@ -101,6 +101,19 @@ timestamp:new Date()
 setCarrinho([]);
 dispararAviso("Pedido enviado com sucesso!");
 };
+  const chamarGarcomAoFirebase = async () => {
+    if (!empresa?.id) return;
+    const agora = new Date();
+    await addDoc(
+      collection(db, "restaurantes", empresa.id, "chamados"),
+      {
+        mesa: numeroMesa,
+        hora: agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date()
+      }
+    );
+    dispararAviso("Garçom chamado! Um atendente está indo à sua mesa.");
+  };
 
 const handleLogoClick=()=>{
 const n=clickCount+1;
@@ -225,18 +238,24 @@ const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaAtiva)
 
      <main className="max-w-4xl mx-auto px-4 md:px-8 mt-6">
   
-  {/* BOTÃO DE CONTA INTEGRADO NO TOPO - CORRIGIDO PARA setMostrarContaMesa */}
-  <div className="flex justify-end mb-4">
-    <button
-      onClick={() => setMostrarContaMesa(true)}
-      className="bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-serif text-xs font-bold px-5 py-2.5 rounded-xl shadow-md flex items-center gap-2 uppercase tracking-wide transition"
-    >
-      📊 Ver Extrato da Mesa
-    </button>
-  </div>
-
-  {/* Linha Divisória Compacta e Sem Título Duplicado */}
-  <div className="text-center border-b-2 border-stone-800 pb-4 mb-6">
+      {/* BOTÕES DE SUPORTE OPERACIONAL INTEGRADOS NO TOPO */}
+      <div className="flex justify-end gap-2 mb-4">
+       <button
+      onClick={chamarGarcomAoFirebase}
+      className="bg-red-700 hover:bg-red-800 text-white font-serif text-[11px] font-bold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 uppercase tracking-wide transition"
+     >
+        🔔 Chamar Garçom
+        </button>
+        <button
+        onClick={() => setMostrarContaMesa(true)}
+         className="bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-serif text-[11px] font-bold px-4 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 uppercase tracking-wide transition"
+  >
+        📊 Ver Extrato
+       </button>
+       </div>
+       
+       {/* Linha Divisória Compacta e Sem Título Duplicado */}
+     <div className="text-center border-b-2 border-stone-800 pb-4 mb-6">
     <div className="inline-block bg-[#3d2314] text-amber-400 font-serif text-[10px] md:text-xs px-5 py-1.5 rounded-full tracking-wider shadow-sm uppercase">
       📌 Toque em qualquer item para pedir na Mesa {numeroMesa}
       </div>
