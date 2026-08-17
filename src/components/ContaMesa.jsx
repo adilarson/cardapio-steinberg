@@ -251,7 +251,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
               </div>
               <p className="text-[11px] text-stone-400">Copie o código acima ou escaneie o QR Code no aplicativo do seu banco.</p>
               <button 
-                onClick={finalizarPedidosNoFirebase}
+                oonClick={() => finalizarPedidosNoFirebase("pix")}
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition"
               >
                 Simular Confirmação Bancária (Aprovar Pix)
