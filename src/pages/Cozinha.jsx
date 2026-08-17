@@ -40,14 +40,13 @@ export default function Cozinha() {
       const docRef = doc(db, "restaurantes", empresa.id, "pedidos", id);
       await updateDoc(docRef, { status: novoStatus });
     } catch (e) {
-      console.error("Erro ao alterar status do pedido:", e);
+      console.error("Erro ao alterará status do pedido:", e);
     }
   }
 
   if (!empresa) {
     return <div className="min-h-screen bg-stone-900 text-white flex items-center justify-center font-bold">Nenhum restaurante carregado no painel da cozinha.</div>;
   }
-
   return (
     <div className="min-h-screen bg-stone-900 text-white font-sans p-4">
       <header className="flex justify-between items-center border-b border-stone-700 pb-4 mb-6">
@@ -67,7 +66,7 @@ export default function Cozinha() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {pedidos
-          .filter(p => p.status === "Pendente" || p.status === "Preparando")
+          .filter(p => p.status === "Pendente" || p.status === "Preparando" || p.status === "Aguardando Garçom")
           .map(pedido => (
             <div
               key={pedido.id}
@@ -80,22 +79,38 @@ export default function Cozinha() {
               <div className="flex justify-between items-center mb-3 pb-2 border-b border-stone-700">
                 <div>
                   <span className="text-xl font-bold text-amber-400">MESA {pedido.mesa}</span>
-                  <div className="mt-1">
+                  <div className="mt-1 flex flex-wrap gap-1.5">
                     {pedido.status === "Pendente" && (
-                      <span className="bg-red-600 text-white text-[10px] px-2 py-1 rounded-full">🔴 AGUARDANDO</span>
+                      <span className="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">🔴 AGUARDANDO</span>
                     )}
                     {pedido.status === "Preparando" && (
-                      <span className="bg-yellow-500 text-black text-[10px] px-2 py-1 rounded-full">🟡 PREPARANDO</span>
+                      <span className="bg-yellow-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold">🟡 PREPARANDO</span>
+                    )}
+                    {pedido.status === "Aguardando Garçom" && (
+                      <span className="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">💵 RECEBER</span>
+                    )}
+                    
+                    {/* BADGES FINANCEIROS SAAS INTEGRADOS */}
+                    {pedido.pago === true || pedido.pago === "true" ? (
+                      <span className="bg-green-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                        ✓ PAGO ({pedido.metodoPagamento})
+                      </span>
+                    ) : (
+                      <span className="bg-stone-700 text-stone-300 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                        ⌛ À PAGAR
+                      </span>
                     )}
                   </div>
                 </div>
                 <span className="text-xs text-stone-400">{pedido.hora}</span>
               </div>
+
               {pedido.observacao && (
-              <div className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold p-2.5 rounded-lg mb-4 italic">
-             📢 OBSERVAÇÃO GERAL: "{pedido.observacao}"
-             </div>
-           )}
+                <div className="bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold p-2.5 rounded-lg mb-4 italic">
+                  📢 OBSERVAÇÃO GERAL: "{pedido.observacao}"
+                </div>
+              )}
+
               <div className="space-y-4 mb-4 min-h-[80px]">
                 {pedido.itens.map((item, index) => (
                   <div key={index} className="border-b border-stone-700 pb-3">
@@ -111,7 +126,6 @@ export default function Cozinha() {
                         </div>
                       ))}
 
-                    {/* Exibe a observação na cozinha caso o Firebase a envie */}
                     {(item.observacao || item.observacaoDoConfigurador) && (
                       <div className="ml-3 mt-2 text-xs italic text-amber-300">
                         📝 {item.observacao || item.observacaoDoConfigurador}
@@ -125,15 +139,15 @@ export default function Cozinha() {
                 {pedido.status === "Pendente" && (
                   <button
                     onClick={() => mudarStatusPedido(pedido.id, "Preparando")}
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg font-bold text-sm"
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg font-bold text-sm transition"
                   >
                     Começar Preparo
                   </button>
                 )}
-                {pedido.status === "Preparando" && (
+                {(pedido.status === "Preparando" || pedido.status === "Aguardando Garçom") && (
                   <button
                     onClick={() => mudarStatusPedido(pedido.id, "Pronto")}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-bold text-sm transition"
                   >
                     Concluir Pedido
                   </button>

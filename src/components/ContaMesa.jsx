@@ -70,31 +70,33 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
       
       const querySnapshot = await getDocs(q);
       const batch = writeBatch(db);
-      
+
       querySnapshot.docs.forEach((documento) => {
         const docRef = doc(db, "restaurantes", idRestaurante, "pedidos", documento.id);
-        
-        // Mantém "Pronto" para cozinha identificar liberação ou "Finalizado" se for dinheiro físico
-        batch.update(docRef, { 
-          status: metodoReal === "dinheiro" ? "Finalizado" : "Pronto",
-          pago: true,
-          metodoPagamento: metodoReal
+        const dadosAtuais = documento.data();
+
+        // Definição inteligente de status para não quebrar a cozinha
+        let novoStatus = dadosAtuais.status; // Mantém onde estava (ex: Preparando ou Pendente)
+
+        if (metodoReal === "dinheiro") {
+          // Dinheiro encerra a mesa para o cliente, mas vira um alerta para o Garçom receber fisicamente
+          novoStatus = "Aguardando Garçom";
+        } else {
+          // Pix ou Cartão online aprovado: Se estava pendente, continua na fila da cozinha, mas agora marcado como pago!
+          if (dadosAtuais.status === "Pendente") {
+            novoStatus = "Pendente";
+          }
+        }
+
+        batch.update(docRef, {
+          status: novoStatus,
+          pago: metodoReal !== "dinheiro", // Pix/Cartão fica pago na hora. Dinheiro só fica pago quando o garçom confirma no painel dele
+          metodoPagamento: metodoReal,
+          alertaFechamento: true // Tag global para disparar piscada visual nas telas operacionais
         });
       });
-      
-      await batch.commit();
-      
-      if (metodoReal === "dinheiro") {
-        const agora = new Date();
-        const chamadosRef = collection(db, "restaurantes", idRestaurante, "chamados");
-        await addDoc(chamadosRef, {
-          mesa: numeroMesa,
-          tipo: "fechamento",
-          hora: agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-          timestamp: new Date()
-        });
-      }
 
+      await batch.commit();
       setPassoPagamento("sucesso");
     } catch (error) {
       console.error("Erro ao processar pagamento:", error);
