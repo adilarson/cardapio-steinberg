@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, query, where, onSnapshot, doc, getDocs, writeBatch, addDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, getDocs, writeBatch, addDoc } from "firebase/firestore"; // Adicionado addDoc aqui
 import { useEmpresa } from "../context/EmpresaContext";
 
 export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
@@ -29,7 +29,6 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
       snapshot.docs.forEach((doc) => {
         const dadosPedido = doc.data();
         if (dadosPedido.itens) {
-          // Anexa o ID do documento pai em cada item para sabermos de qual pedido ele veio
           const itensComId = dadosPedido.itens.map(item => ({
             ...item,
             pedidoDocId: doc.id
@@ -47,24 +46,22 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
     return () => unsubscribe();
   }, [empresa?.id, restaurantSlug, numeroMesa]);
 
-  // Calcula o total acumulado consumido na mesa
   const totalGeral = pedidosConsumidos.reduce((acc, item) => {
     const precoItem = item.precoFinal ?? item.preco ?? 0;
     return acc + (Number(precoItem) * Number(item.quantidade));
   }, 0);
 
-  // Calcula o valor por pessoa no Split the Bill
   const valorPorPessoa = totalGeral / (quantidadePessoas || 1);
 
-  // Função para simular a baixa automatizada no Firebase (Garante o fluxo real no Admin/Cozinha)
-  const finalizarPedidosNoFirebase = async () => {
+  // FUNÇÃO DE BAIXA ATUALIZADA (Força a gravação correta do método passado por parâmetro)
+  const finalizarPedidosNoFirebase = async (metodoForcado) => {
     const idRestaurante = empresa?.id || restaurantSlug;
     if (!idRestaurante || !numeroMesa) return;
     
     setProcessandoPagamento(true);
+    const metodoReal = metodoForcado || metodoSelecionado;
     
     try {
-      // Busca todos os pedidos ativos da mesa para atualizar o status em lote (Batch)
       const q = query(
         collection(db, "restaurantes", idRestaurante, "pedidos"),
         where("mesa", "==", numeroMesa),
@@ -76,21 +73,20 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
       
       querySnapshot.docs.forEach((documento) => {
         const docRef = doc(db, "restaurantes", idRestaurante, "pedidos", documento.id);
-        // Atualiza para Finalizado se pago em dinheiro com o garçom ou mantém na tela com marcador se pago online
+        
+        // Mantém "Pronto" para cozinha identificar liberação ou "Finalizado" se for dinheiro físico
         batch.update(docRef, { 
-          status: metodoSelecionado === "dinheiro" ? "Finalizado" : "Pronto",
+          status: metodoReal === "dinheiro" ? "Finalizado" : "Pronto",
           pago: true,
-          metodoPagamento: metodoSelecionado
+          metodoPagamento: metodoReal
         });
       });
       
       await batch.commit();
       
-      // Se o cliente escolheu dinheiro, avisa o garçom criando um chamado de fechamento
-      if (metodoSelecionado === "dinheiro") {
+      if (metodoReal === "dinheiro") {
         const agora = new Date();
         const chamadosRef = collection(db, "restaurantes", idRestaurante, "chamados");
-        // O código do Garcom.jsx já detecta e lista esse aviso em tempo real
         await addDoc(chamadosRef, {
           mesa: numeroMesa,
           tipo: "fechamento",
@@ -255,7 +251,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
               </div>
               <p className="text-[11px] text-stone-400">Copie o código acima ou escaneie o QR Code no aplicativo do seu banco.</p>
               <button 
-                onClick={finalizarPedidosNoFirebase}
+                onClick={() => finalizarPedidosNoFirebase("pix")}
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition"
               >
                 Simular Confirmação Bancária (Aprovar Pix)
@@ -278,7 +274,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
                 <input type="text" placeholder="Nome Impresso no Cartão" className="w-full border p-3 rounded-xl text-sm focus:outline-amber-800" disabled />
               </div>
               <button 
-                onClick={finalizarPedidosNoFirebase}
+                onClick={() => finalizarPedidosNoFirebase("cartao")}
                 className="w-full bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-bold py-3 rounded-xl text-sm uppercase tracking-wider transition"
               >
                 Simular Aprovação de Crédito
