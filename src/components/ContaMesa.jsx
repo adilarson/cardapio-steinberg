@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, query, where, onSnapshot, doc, getDocs, writeBatch } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, getDocs, writeBatch, addDoc } from "firebase/firestore";
 import { useEmpresa } from "../context/EmpresaContext";
 
 export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
@@ -116,8 +116,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
       </div>
     );
   }
-
-    return (
+  return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
         
@@ -181,13 +180,18 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
                 ) : (
                   pedidosConsumidos.map((item, index) => {
                     const precoItem = item.precoFinal ?? item.preco ?? 0;
-                                        return (
-                      <div key={index} className="flex justify-between items-center text-sm py-1 border-b border-stone-100">
+                    return (
+                      <div key={index} className="flex justify-between items-start border-b border-stone-200/60 pb-3">
                         <div>
-                          <span className="font-bold text-stone-800">{item.quantidade}x</span> <span className="text-stone-700">{item.nome}</span>
+                          <h4 className="font-bold text-[#3d2314] text-sm font-serif">
+                            {item.quantidade}x {item.nome}
+                          </h4>
+                          {item.observacao && (
+                            <p className="text-[11px] text-amber-700 italic">Obs: {item.observacao}</p>
+                          )}
                         </div>
-                        <span className="font-mono text-stone-600">
-                          {(precoItem * item.quantidade).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        <span className="font-mono text-sm text-stone-700 font-bold">
+                          {(Number(precoItem) * Number(item.quantidade)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </span>
                       </div>
                     );
@@ -197,6 +201,91 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
             </>
           )}
 
+          {/* PASSO 2: SELEÇÃO DE MÉTODOS DE PAGAMENTO */}
+          {passoPagamento === "opcoes" && (
+            <div className="space-y-3">
+              <span className="text-xs font-bold text-stone-400 uppercase tracking-wider block mb-2">Selecione a Forma de Pagamento</span>
+              
+              <button 
+                onClick={() => { setMetodoSelecionado("pix"); setPassoPagamento("pix"); }}
+                className="w-full bg-white border-2 border-stone-200 hover:border-teal-600 p-4 rounded-xl flex items-center justify-between text-left transition group"
+              >
+                <div>
+                  <h4 className="font-bold text-stone-800 group-hover:text-teal-700 transition">📱 Pix Dinâmico</h4>
+                  <p className="text-xs text-stone-400 mt-0.5">Aprovação imediata e liberação automática</p>
+                </div>
+                <span className="text-stone-300 group-hover:text-teal-600 font-bold text-lg">➔</span>
+              </button>
+
+              <button 
+                onClick={() => { setMetodoSelecionado("cartao"); setPassoPagamento("cartao"); }}
+                className="w-full bg-white border-2 border-stone-200 hover:border-amber-700 p-4 rounded-xl flex items-center justify-between text-left transition group"
+              >
+                <div>
+                  <h4 className="font-bold text-stone-800 group-hover:text-amber-800 transition">💳 Cartão de Crédito / Débito</h4>
+                  <p className="text-xs text-stone-400 mt-0.5">Pague online com total segurança pelo celular</p>
+                </div>
+                <span className="text-stone-300 group-hover:text-amber-700 font-bold text-lg">➔</span>
+              </button>
+
+              <button 
+                onClick={() => { setMetodoSelecionado("dinheiro"); finalizarPedidosNoFirebase(); }}
+                className="w-full bg-white border-2 border-stone-200 hover:border-stone-700 p-4 rounded-xl flex items-center justify-between text-left transition group"
+              >
+                <div>
+                  <h4 className="font-bold text-stone-800 group-hover:text-stone-900 transition">💵 Pagar com o Garçom</h4>
+                  <p className="text-xs text-stone-400 mt-0.5">Chama o atendente para pagar em Dinheiro ou Maquininha</p>
+                </div>
+                <span className="text-stone-300 group-hover:text-stone-800 font-bold text-lg">➔</span>
+              </button>
+            </div>
+          )}
+          {/* PASSO 3: TELA DO PIX DINÂMICO */}
+          {passoPagamento === "pix" && (
+            <div className="text-center py-4 space-y-4">
+              <span className="bg-teal-50 text-teal-700 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
+                Aguardando Pagamento Pix
+              </span>
+              <div className="w-44 h-44 bg-stone-200 mx-auto rounded-xl flex items-center justify-center border border-stone-300 shadow-inner relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-teal-600/10 to-transparent"></div>
+                <span className="text-stone-400 text-xs px-4 text-center font-medium font-mono z-10">QR CODE PIX DINÂMICO DEMO</span>
+              </div>
+              <div className="bg-stone-50 p-3 rounded-lg border text-xs font-mono text-stone-600 break-all select-all cursor-pointer">
+                00020101021226850014br.gov.bcb.pix2563pix.steinberg-demo-saas-total={totalGeral.toFixed(2)}
+              </div>
+              <p className="text-[11px] text-stone-400">Copie o código acima ou escaneie o QR Code no aplicativo do seu banco.</p>
+              <button 
+                onClick={finalizarPedidosNoFirebase}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition"
+              >
+                Simular Confirmação Bancária (Aprovar Pix)
+              </button>
+            </div>
+          )}
+
+          {/* PASSO 4: TELA DO CARTÃO ONLINE */}
+          {passoPagamento === "cartao" && (
+            <div className="space-y-4">
+              <span className="bg-amber-50 text-amber-800 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider block text-center">
+                Checkout de Cartão Seguro
+              </span>
+              <div className="space-y-3">
+                <input type="text" placeholder="Número do Cartão" className="w-full border p-3 rounded-xl text-sm focus:outline-amber-800" disabled />
+                <div className="grid grid-cols-2 gap-3">
+                  <input type="text" placeholder="Validade (MM/AA)" className="w-full border p-3 rounded-xl text-sm focus:outline-amber-800" disabled />
+                  <input type="text" placeholder="CVV" className="w-full border p-3 rounded-xl text-sm focus:outline-amber-800" disabled />
+                </div>
+                <input type="text" placeholder="Nome Impresso no Cartão" className="w-full border p-3 rounded-xl text-sm focus:outline-amber-800" disabled />
+              </div>
+              <button 
+                onClick={finalizarPedidosNoFirebase}
+                className="w-full bg-[#3d2314] hover:bg-[#2b180d] text-amber-400 font-bold py-3 rounded-xl text-sm uppercase tracking-wider transition"
+              >
+                Simular Aprovação de Crédito
+              </button>
+            </div>
+          )}
+
           {/* PASSO 5: TELA DE SUCESSO TOTAL */}
           {passoPagamento === "sucesso" && (
             <>
@@ -204,7 +293,12 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
               {metodoSelecionado === "dinheiro"
                 ? "O chamado de fechamento foi enviado. O garçom está trazendo a sua conta na mesa!"
                 : "Pagamento aprovado instantaneamente! Seu pedido já recebeu baixa automática no sistema."}
-              Voltar ao Cardápio
+              <button 
+                onClick={() => setPassoPagamento("extrato")} 
+                className="block text-amber-800 underline font-bold mt-2 text-sm"
+              >
+                Voltar ao Cardápio
+              </button>
             </>
           )}
 
@@ -212,7 +306,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
 
         {/* Rodapé Fixo de Valores (Oculto na tela de sucesso) */}
         {passoPagamento !== "sucesso" && (
-          <div className="p-4 bg-white border-t">
+          <div className="p-4 bg-white border-t border-stone-200">
             <div className="flex justify-between items-center mb-2">
               <span>{quantidadePessoas > 1 ? `Sua Cota (${quantidadePessoas}x):` : "Total da Mesa:"}</span>
               <span className="font-bold text-xl">
