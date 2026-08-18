@@ -56,76 +56,86 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
   // FUNÇÃO DE BAIXA ATUALIZADA (Força a gravação correta do método passado por parâmetro)
   const finalizarPedidosNoFirebase = async (metodoForcado) => {
   const idRestaurante = empresa?.id || restaurantSlug;
-  if (!idRestaurante || !numeroMesa) return;
+  
+  // Captura o identificador exatamente como o componente recebeu na propriedade
+  const mesaIdentificada = numeroMesa || "Principal";
+
+  if (!idRestaurante) {
+    console.error("Erro Crítico: ID do Restaurante ausente no fechamento.");
+    return;
+  }
   
   setProcessandoPagamento(true);
-  const metodoReal = metodoForcado || metodoSelecionado;
+  // Garante que o método sempre seja injetado, mesmo se houver atraso de estado
+  const metodoReal = metodoForcado || metodoSelecionado || "dinheiro";
   
   try {
-    // Convertemos para string e aplicamos trim para evitar divergências entre texto e número
-    const mesaBusca = String(numeroMesa).trim();
+    const mesaBusca = String(mesaIdentificada).trim();
 
+    // Consulta flexível: busca pedidos que pertençam a esta mesa e que não estejam finalizados
     const q = query(
       collection(db, "restaurantes", idRestaurante, "pedidos"),
-      where("mesa", "==", mesaBusca),
       where("status", "!=", "Finalizado")
     );
     
     const querySnapshot = await getDocs(q);
     const batch = writeBatch(db);
-    
-    if (querySnapshot.empty) {
-      console.warn("Nenhum pedido ativo encontrado para a mesa:", mesaBusca);
-    }
+    let atualizouAlgum = false;
     
     querySnapshot.docs.forEach((documento) => {
-      const docRef = doc(db, "restaurantes", idRestaurante, "pedidos", documento.id);
       const dadosAtuais = documento.data();
-
-      let novoStatus = dadosAtuais.status;
-      if (metodoReal === "dinheiro") {
-        novoStatus = "Aguardando Garçom"; 
+      
+      const nomeMesaBanco = String(dadosAtuais.mesa || "").toLowerCase().trim();
+      const nomeMesaBusca = mesaBusca.toLowerCase();
+      
+      // Validação tolerante para cobrir "Mesa Principal", "Principal", "02", etc.
+      if (nomeMesaBanco === nomeMesaBusca || nomeMesaBanco.includes(nomeMesaBusca) || nomeMesaBusca.includes(nomeMesaBanco)) {
+        const docRef = doc(db, "restaurantes", idRestaurante, "pedidos", documento.id);
+        
+        // Se escolheu dinheiro, muda o status para alertar o painel do garçom
+        let novoStatus = dadosAtuais.status;
+        if (metodoReal === "dinheiro") {
+          novoStatus = "Aguardando Garçom";
+        }
+        
+        batch.update(docRef, { 
+          status: novoStatus,
+          pago: metodoReal !== "dinheiro", // Pix/Cartão vira pago. Dinheiro fica falso até o garçom receber físico
+          metodoPagamento: metodoReal,
+          alertaFechamento: true
+        });
+        
+        atualizouAlgum = true;
       }
-
-      batch.update(docRef, { 
-        status: novoStatus,
-        pago: metodoReal !== "dinheiro", 
-        metodoPagamento: metodoReal,
-        alertaFechamento: true 
-      });
     });
     
-    await batch.commit();
+    if (atualizouAlgum) {
+      await batch.commit();
+    }
     
+    // FLUXO DE FECHAMENTO FINANCEIRO DO BOTÃO "PAGAR COM O GARÇOM"
     if (metodoReal === "dinheiro") {
       const agora = new Date();
       const chamadosRef = collection(db, "restaurantes", idRestaurante, "chamados");
       
+      // Envia o chamado mapeado com o tipo "fechamento" para acionar o painel do garçom
       await addDoc(chamadosRef, {
-        mesa: mesaBusca, // Força salvar como string limpa
-        tipo: "fechamento",
+        mesa: mesaBusca,
+        tipo: "fechamento", // <--- Isso dispara o card amarelo piscante do garçom
         hora: agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
         timestamp: new Date()
       });
     }
 
+    // Avança a interface para a tela de sucesso
     setPassoPagamento("sucesso");
   } catch (error) {
-    console.error("Erro crítico ao processar pagamento no Firebase:", error);
+    console.error("Erro ao processar fechamento de mesa no Firebase:", error);
   } finally {
     setProcessandoPagamento(false);
   }
 };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white p-6 rounded-2xl shadow-xl font-bold text-stone-700 animate-pulse text-center">
-          ⏳ Carregando extrato da mesa...
-        </div>
-      </div>
-    );
-  }
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
