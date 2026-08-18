@@ -55,55 +55,67 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
 
   // FUNÇÃO DE BAIXA ATUALIZADA (Força a gravação correta do método passado por parâmetro)
   const finalizarPedidosNoFirebase = async (metodoForcado) => {
-    const idRestaurante = empresa?.id || restaurantSlug;
-    if (!idRestaurante || !numeroMesa) return;
+  const idRestaurante = empresa?.id || restaurantSlug;
+  if (!idRestaurante || !numeroMesa) return;
+  
+  setProcessandoPagamento(true);
+  const metodoReal = metodoForcado || metodoSelecionado;
+  
+  try {
+    // Convertemos para string e aplicamos trim para evitar divergências entre texto e número
+    const mesaBusca = String(numeroMesa).trim();
+
+    const q = query(
+      collection(db, "restaurantes", idRestaurante, "pedidos"),
+      where("mesa", "==", mesaBusca),
+      where("status", "!=", "Finalizado")
+    );
     
-    setProcessandoPagamento(true);
-    const metodoReal = metodoForcado || metodoSelecionado;
+    const querySnapshot = await getDocs(q);
+    const batch = writeBatch(db);
     
-    try {
-      const q = query(
-        collection(db, "restaurantes", idRestaurante, "pedidos"),
-        where("mesa", "==", numeroMesa),
-        where("status", "!=", "Finalizado")
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const batch = writeBatch(db);
-
-      querySnapshot.docs.forEach((documento) => {
-        const docRef = doc(db, "restaurantes", idRestaurante, "pedidos", documento.id);
-        const dadosAtuais = documento.data();
-
-        // Definição inteligente de status para não quebrar a cozinha
-        let novoStatus = dadosAtuais.status; // Mantém onde estava (ex: Preparando ou Pendente)
-
-        if (metodoReal === "dinheiro") {
-          // Dinheiro encerra a mesa para o cliente, mas vira um alerta para o Garçom receber fisicamente
-          novoStatus = "Aguardando Garçom";
-        } else {
-          // Pix ou Cartão online aprovado: Se estava pendente, continua na fila da cozinha, mas agora marcado como pago!
-          if (dadosAtuais.status === "Pendente") {
-            novoStatus = "Pendente";
-          }
-        }
-
-        batch.update(docRef, {
-          status: novoStatus,
-          pago: metodoReal !== "dinheiro", // Pix/Cartão fica pago na hora. Dinheiro só fica pago quando o garçom confirma no painel dele
-          metodoPagamento: metodoReal,
-          alertaFechamento: true // Tag global para disparar piscada visual nas telas operacionais
-        });
-      });
-
-      await batch.commit();
-      setPassoPagamento("sucesso");
-    } catch (error) {
-      console.error("Erro ao processar pagamento:", error);
-    } finally {
-      setProcessandoPagamento(false);
+    if (querySnapshot.empty) {
+      console.warn("Nenhum pedido ativo encontrado para a mesa:", mesaBusca);
     }
-  };
+    
+    querySnapshot.docs.forEach((documento) => {
+      const docRef = doc(db, "restaurantes", idRestaurante, "pedidos", documento.id);
+      const dadosAtuais = documento.data();
+
+      let novoStatus = dadosAtuais.status;
+      if (metodoReal === "dinheiro") {
+        novoStatus = "Aguardando Garçom"; 
+      }
+
+      batch.update(docRef, { 
+        status: novoStatus,
+        pago: metodoReal !== "dinheiro", 
+        metodoPagamento: metodoReal,
+        alertaFechamento: true 
+      });
+    });
+    
+    await batch.commit();
+    
+    if (metodoReal === "dinheiro") {
+      const agora = new Date();
+      const chamadosRef = collection(db, "restaurantes", idRestaurante, "chamados");
+      
+      await addDoc(chamadosRef, {
+        mesa: mesaBusca, // Força salvar como string limpa
+        tipo: "fechamento",
+        hora: agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date()
+      });
+    }
+
+    setPassoPagamento("sucesso");
+  } catch (error) {
+    console.error("Erro crítico ao processar pagamento no Firebase:", error);
+  } finally {
+    setProcessandoPagamento(false);
+  }
+};
 
   if (loading) {
     return (
