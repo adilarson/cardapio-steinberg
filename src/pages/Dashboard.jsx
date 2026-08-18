@@ -74,30 +74,51 @@ export default function Dashboard() {
   }, [empresa?.id, mesSelecionado, anoSelecionado]);
 
   // ENGINE CONTÁBIL OTIMIZADA (Mais tolerante a variações de campos do Firebase)
+    // ENGINE CONTÁBIL UNIVERSAL E CORRIGIDA
   const contabilidade = pedidos.reduce((acc, pedido) => {
-    const dataPedido = pedido.timestamp?.toDate ? pedido.timestamp.toDate() : new Date(pedido.timestamp);
+    // 1. Extração segura da data do Firebase (evita erros de fuso horário ou conversão de milissegundos)
+    let dataPedido = new Date();
+    if (pedido.timestamp?.toDate) {
+      dataPedido = pedido.timestamp.toDate();
+    } else if (pedido.timestamp) {
+      dataPedido = new Date(pedido.timestamp);
+    } else {
+      return acc; // Ignora se não houver registro de horário
+    }
+
+    // Alinhamento exato com o padrão do seletor (Janeiro = 1, Dezembro = 12)
     const mesPedido = dataPedido.getMonth() + 1;
     const anoPedido = dataPedido.getFullYear();
 
-    // FILTRO DE PERÍODO MENSAL
+    // 2. Validação estrita do período selecionado na interface
     if (mesPedido === Number(mesSelecionado) && anoPedido === Number(anoSelecionado)) {
       
-      // Validação tolerante: aceita boleano true ou string "true"
+      // Validação tolerante para checar pagamento: aceita booleanos ou strings
       const estaPago = pedido.pago === true || pedido.pago === "true";
-      const statusValido = ["Pronto", "Entregue", "Entregues", "Finalizado"].includes(pedido.status);
+      
+      // Qualquer status operável ou finalizado entra na contabilidade do turno
+      const statusValido = ["Pendente", "Preparando", "Aguardando Garçom", "Pronto", "Entregue", "Entregues", "Finalizado"].includes(pedido.status);
 
       if (estaPago || statusValido) {
+        // Normaliza a string do método para evitar falhas com acentuação ou caixa alta
         const metodo = String(pedido.metodoPagamento || "").toLowerCase().trim();
         
+        // Soma o total do carrinho deste pedido
         const totalPedido = pedido.itens?.reduce((soma, item) => {
           const preco = item.precoFinal ?? item.preco ?? 0;
           return soma + (Number(preco) * Number(item.quantidade));
         }, 0) || 0;
 
-        if (metodo === "pix") acc.pix += totalPedido;
-        else if (metodo === "cartao" || metodo === "cartão") acc.cartao += totalPedido;
-        else if (metodo === "dinheiro") acc.dinheiro += totalPedido;
+        // Distribui o valor para a respectiva gaveta financeira
+        if (metodo === "pix") {
+          acc.pix += totalPedido;
+        } else if (metodo === "cartao" || metodo === "cartão" || metodo === "credito" || metodo === "debito") {
+          acc.cartao += totalPedido;
+        } else if (metodo === "dinheiro") {
+          acc.dinheiro += totalPedido;
+        }
         
+        // Faturamento bruto geral atualizado
         acc.faturamentoCalculado += totalPedido;
       }
     }
