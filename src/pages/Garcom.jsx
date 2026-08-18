@@ -76,25 +76,27 @@ export default function Garcom() {
     return () => unsubscribeChamados();
   }, [empresa?.id, chamados.length]);
 
-  async function mudarStatusPedido(id, novoStatus) {
+    async function mudarStatusPedido(id, novoStatus) {
     if (!empresa?.id) return;
     try {
       const docRef = doc(db, "restaurantes", empresa.id, "pedidos", id);
       
-      // Se o garçom entregar um pedido que foi solicitado fechamento em dinheiro, dá baixa fiscal imediata como Finalizado
       const pedidoAtual = pedidos.find(p => p.id === id);
       const atualizacao = { status: novoStatus };
       
+      // Se for dinheiro, o garçom confirma o recebimento físico e finaliza
       if (novoStatus === "Entregue" && pedidoAtual?.metodoPagamento === "dinheiro") {
         atualizacao.status = "Finalizado";
         atualizacao.pago = true;
       }
 
-      await updateDoc(docRef, updateDoc);
+      // CORREÇÃO AQUI: Passando o objeto correto 'atualizacao'
+      await updateDoc(docRef, atualizacao); 
     } catch (e) {
       console.error("Erro ao alterar status do pedido:", e);
     }
   }
+
 
   async function atenderChamado(id) {
     if (!empresa?.id) return;
