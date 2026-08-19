@@ -23,67 +23,47 @@ const dados = [
 export default function GraficoVendas() {
   return (
     <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-8">
-
       <div className="flex justify-between items-center mb-8">
-
         <div>
-
           <h2 className="text-2xl font-bold text-stone-800">
             Vendas dos Últimos 7 Dias
           </h2>
-
           <p className="text-stone-500 mt-1">
             Receita diária do restaurante
           </p>
-
         </div>
-
         <div className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl font-semibold">
           ▲ 18%
         </div>
-
       </div>
-
       <div style={{ width: "100%", height: 350 }}>
-
         <ResponsiveContainer>
-
           <AreaChart data={dados}>
-
             <defs>
-
               <linearGradient id="corVendas" x1="0" y1="0" x2="0" y2="1">
-
                 <stop
                   offset="5%"
                   stopColor="#92400e"
                   stopOpacity={0.45}
                 />
-
                 <stop
                   offset="95%"
                   stopColor="#92400e"
                   stopOpacity={0}
                 />
-
               </linearGradient>
-
             </defs>
-
             <CartesianGrid
               strokeDasharray="4 4"
               stroke="#e7e5e4"
             />
-
             <XAxis
               dataKey="dia"
               tick={{ fill: "#78716c" }}
             />
-
             <YAxis
               tick={{ fill: "#78716c" }}
             />
-
             <Tooltip
               contentStyle={{
                 borderRadius: 16,
@@ -91,7 +71,6 @@ export default function GraficoVendas() {
                 boxShadow: "0 10px 30px rgba(0,0,0,.15)"
               }}
             />
-
             <Area
               type="monotone"
               dataKey="vendas"
@@ -99,13 +78,9 @@ export default function GraficoVendas() {
               strokeWidth={4}
               fill="url(#corVendas)"
             />
-
           </AreaChart>
-
         </ResponsiveContainer>
-
       </div>
-
     </div>
   );
 }

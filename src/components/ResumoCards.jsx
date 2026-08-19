@@ -15,19 +15,14 @@ function Card({
         className="absolute top-0 left-0 w-full h-1"
         style={{ background: cor }}
       />
-
       <div className="flex justify-between items-start">
-
         <div>
-
           <p className="text-sm text-stone-500 font-medium">
             {titulo}
           </p>
-
           <h2 className="text-4xl font-bold text-stone-800 mt-3">
             {valor}
           </h2>
-
           <div
             className={`mt-4 inline-flex items-center gap-1 text-sm font-semibold ${
               positiva
@@ -37,9 +32,7 @@ function Card({
           >
             {positiva ? "▲" : "▼"} {variacao}
           </div>
-
         </div>
-
         <div
           className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl shadow-inner"
           style={{
@@ -48,9 +41,7 @@ function Card({
         >
           {icone}
         </div>
-
       </div>
-
     </div>
   );
 }
