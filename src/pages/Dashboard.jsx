@@ -15,7 +15,7 @@ export default function Dashboard() {
   
   // NOVOS ESTADOS: CONTROLE DE PERÍODO (MÊS E ANO)
   const dataAtual = new Date();
-  const [mesSelecionado, setMesSelecionado] = useState(dataAtual.getMonth() + 1); // 1 a 12
+  const [mesSelecionado, setMesSelecionado] = useState(dataAtual.getMonth() + 1); 
   const [anoSelecionado, setAnoSelecionado] = useState(dataAtual.getFullYear());
 
   // ESTADOS: FECHAMENTO DE CAIXA DIÁRIO
@@ -412,7 +412,8 @@ export default function Dashboard() {
             <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
               <div>
                 <h2 className="text-xl font-bold text-stone-800">DRE Mensal Avançado & Lançamento de Custos</h2>
-                <p className="text-xs text-stone-500">Balanço do período: {mesSelecionado}/{anoSelecionado}</p>
+                <p className="text-xs text-stone-500">
+               Balanço do período: {String(mesSelecionado).padStart(2, "0")}/{anoSelecionado}</p>
               </div>
               <button onClick={() => setModalDreAberto(false)} className="text-stone-400 hover:text-stone-600 text-xl font-bold p-1">✕</button>
             </div>
