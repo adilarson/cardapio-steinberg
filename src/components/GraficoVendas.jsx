@@ -1,5 +1,7 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
+import { db } from "../firebase";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { useEmpresa } from "../context/EmpresaContext";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -10,17 +12,105 @@ import {
   YAxis
 } from "recharts";
 
-const dados = [
-  { dia: "Seg", vendas: 820 },
-  { dia: "Ter", vendas: 1150 },
-  { dia: "Qua", vendas: 980 },
-  { dia: "Qui", vendas: 1480 },
-  { dia: "Sex", vendas: 2260 },
-  { dia: "Sáb", vendas: 3840 },
-  { dia: "Dom", vendas: 2910 }
-];
-
 export default function GraficoVendas() {
+  const { empresa } = useEmpresa();
+  const [dadosGrafico, setDadosGrafico] = useState([]);
+  const [variacaoPercentual, setVariacaoPercentual] = useState("0%");
+  const [crescimento, setCrescimento] = useState(true);
+
+  useEffect(() => {
+    if (!empresa?.id) return;
+
+    // Escuta ativa de toda a coleção de pedidos ordenada por tempo
+    const q = query(
+      collection(db, "restaurantes", empresa.id, "pedidos"),
+      orderBy("timestamp", "asc")
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const pedidos = snapshot.docs.map(doc => doc.data());
+      
+      const hoje = new Date();
+      const diasSemanaTexto = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+      
+      // 1. Inicializa a estrutura fixa dos últimos 7 dias retroativos à data de hoje
+      const mapaUltimos7Dias = {};
+      const listaDiasOrdenados = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const dataRetroativa = new Date();
+        dataRetroativa.setDate(hoje.getDate() - i);
+        
+        // Chave de agrupamento única por dia do ano (ex: "2026-08-19")
+        const chaveData = dataRetroativa.toISOString().split('T')[0];
+        const nomeDia = diasSemanaTexto[dataRetroativa.getDay()];
+        
+        mapaUltimos7Dias[chaveData] = { dia: nomeDia, vendas: 0 };
+        listaDiasOrdenados.push(chaveData);
+      }
+
+      // Variáveis para calcular a variação percentual contra a semana retrasada
+      let totalSemanaAtual = 0;
+      let totalSemanaAnterior = 0;
+
+      const inicioSemanaAtual = new Date();
+      inicioSemanaAtual.setDate(hoje.getDate() - 6);
+      inicioSemanaAtual.setHours(0,0,0,0);
+
+      const inicioSemanaAnterior = new Date();
+      inicioSemanaAnterior.setDate(hoje.getDate() - 13);
+      inicioSemanaAnterior.setHours(0,0,0,0);
+
+      // 2. Varre os pedidos compilando os valores financeiros baseados no faturamento real
+      pedidos.forEach((pedido) => {
+        if (!pedido.timestamp) return;
+        
+        const dataPedido = pedido.timestamp.toDate ? pedido.timestamp.toDate() : new Date(pedido.timestamp);
+        const chavePedido = dataPedido.toISOString().split('T')[0];
+
+        // Regra contábil: O pedido deve estar pago ou processado operacionalmente
+        const estaPago = pedido.pago === true || pedido.pago === "true";
+        const statusValido = ["Pendente", "Preparando", "Aguardando Garçom", "Pronto", "Entregue", "Finalizado"].includes(pedido.status);
+
+        if (estaPago || statusValido) {
+          const totalPedido = pedido.itens?.reduce((soma, item) => {
+            const preco = item.precoFinal ?? item.preco ?? 0;
+            return soma + (Number(preco) * Number(item.quantidade));
+          }, 0) || 0;
+
+          // Se cair dentro do range dos últimos 7 dias, soma no gráfico
+          if (mapaUltimos7Dias[chavePedido] !== undefined) {
+            mapaUltimos7Dias[chavePedido].vendas += totalPedido;
+          }
+
+          // Computação de tendência de mercado (Semana Atual vs Semana Anterior)
+          if (dataPedido >= inicioSemanaAtual) {
+            totalSemanaAtual += totalPedido;
+          } else if (dataPedido >= inicioSemanaAnterior && dataPedido < inicioSemanaAtual) {
+            totalSemanaAnterior += totalPedido;
+          }
+        }
+      });
+
+      // 3. Renderiza o array final estruturado para o Recharts ler
+      const dadosFinaisRecharts = listaDiasOrdenados.map(chave => mapaUltimos7Dias[chave]);
+      setDadosGrafico(dadosFinaisRecharts);
+
+      // 4. Cálculo matemático real da variação de desempenho do SaaS
+      if (totalSemanaAnterior > 0) {
+        const diff = ((totalSemanaAtual - totalSemanaAnterior) / totalSemanaAnterior) * 100;
+        setVariacaoPercentual(`${Math.abs(Math.round(diff))}%`);
+        setCrescimento(diff >= 0);
+      } else {
+        setVariacaoPercentual(totalSemanaAtual > 0 ? "100%" : "0%");
+        setCrescimento(true);
+      }
+    }, (error) => {
+      console.error("Erro na engine reativa do gráfico de vendas:", error);
+    });
+
+    return () => unsubscribe();
+  }, [empresa?.id]);
   return (
     <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-8">
       <div className="flex justify-between items-center mb-8">
@@ -29,16 +119,22 @@ export default function GraficoVendas() {
             Vendas dos Últimos 7 Dias
           </h2>
           <p className="text-stone-500 mt-1">
-            Receita diária do restaurante
+            Receita diária em tempo real do restaurante
           </p>
         </div>
-        <div className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl font-semibold">
-          ▲ 18%
+        <div className={`px-4 py-2 rounded-xl font-semibold flex items-center gap-1 text-sm ${
+          crescimento 
+            ? "bg-emerald-100 text-emerald-700" 
+            : "bg-red-100 text-red-700"
+        }`}>
+          <span>{crescimento ? "▲" : "▼"}</span>
+          <span>{variacaoPercentual}</span>
         </div>
       </div>
+      
       <div style={{ width: "100%", height: 350 }}>
         <ResponsiveContainer>
-          <AreaChart data={dados}>
+          <AreaChart data={dadosGrafico}>
             <defs>
               <linearGradient id="corVendas" x1="0" y1="0" x2="0" y2="1">
                 <stop
@@ -63,8 +159,13 @@ export default function GraficoVendas() {
             />
             <YAxis
               tick={{ fill: "#78716c" }}
+              tickFormatter={(valor) => `R$ ${valor}`}
             />
             <Tooltip
+              formatter={(valor) => [
+                valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+                "Faturamento"
+              ]}
               contentStyle={{
                 borderRadius: 16,
                 border: "none",
