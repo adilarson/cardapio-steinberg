@@ -7,6 +7,7 @@ import UltimosPedidos from "../components/UltimosPedidos";
 import { useEmpresa } from "../context/EmpresaContext";
 import { useParams } from "react-router-dom";
 import GeradorPdfPainel from "../components/GeradorPdfPainel";
+import GraficoVendas from "../components/GraficoVendas"; 
 
 export default function Dashboard() {
   const { restaurantSlug } = useParams();
@@ -238,20 +239,24 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Cards Informativos Superiores */}
+                {/* Cards Informativos Superiores */}
         <DashboardCards pedidos={pedidos} />
 
-        {/* Gráficos e Tabelas Operacionais */}
-        <div className="grid lg:grid-cols-2 gap-8 mt-8">
-          <ProdutosMaisVendidos pedidos={pedidos} />
-          <UltimosPedidos pedidos={pedidos} />
+        {/* GRÁFICOS E TABELAS OPERACIONAIS VIVAS NO FIREBASE */}
+        <div className="mt-8 space-y-8">
+          {/* O componente dinâmico que alteramos entra exatamente aqui */}
+          <GraficoVendas /> 
+          
+          <div className="grid lg:grid-cols-2 gap-8">
+            <ProdutosMaisVendidos pedidos={pedidos} />
+            <UltimosPedidos pedidos={pedidos} />
+          </div>
         </div>
 
         {/* Gerador de PDF de Impressão */}
         <div className="mt-10">
           <GeradorPdfPainel />
         </div>
-
       </div>
 
             {/* ====================================================== */}
