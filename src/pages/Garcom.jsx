@@ -186,26 +186,40 @@ export default function Garcom() {
                       pedido.status === "Aguardando Garçom" ? "bg-amber-50/60 border-amber-400" : "bg-white border-amber-300"
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-3 pb-2 border-b border-stone-100">
-                      <div>
-                        <span className="text-lg font-bold text-amber-900 block">🔔 SERVIR MESA {pedido.mesa}</span>
-                        
-                        {/* BADGES FINANCEIROS NO SALÃO */}
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {estaPago ? (
-                            <span className="bg-green-100 text-green-800 text-[9px] px-2 py-0.5 rounded font-black tracking-wide uppercase">
-                              📱 PAGO ONLINE ({pedido.metodoPagamento})
-                            </span>
-                          ) : (
-                            <span className="bg-red-100 text-red-800 text-[9px] px-2 py-0.5 rounded font-black tracking-wide uppercase">
-                              💵 RECEBER COM O GARÇOM
-                            </span>
-                          )}
-                        </div>
+                                      <div className="flex justify-between items-start mb-3 pb-2 border-b border-stone-100">
+                    <div>
+                      <span className="text-lg font-bold text-amber-900 block">🔔 SERVIR MESA {pedido.mesa}</span>
+                      
+                      {/* BADGES FINANCEIROS NO SALÃO */}
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {estaPago ? (
+                          <span className="bg-green-100 text-green-800 text-[9px] px-2 py-0.5 rounded font-black tracking-wide uppercase">
+                            📱 PAGO ONLINE ({pedido.metodoPagamento})
+                          </span>
+                        ) : (
+                          <span className="bg-red-100 text-red-800 text-[9px] px-2 py-0.5 rounded font-black tracking-wide uppercase">
+                            💵 RECEBER COM O GARÇOM
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] bg-amber-100 px-2 py-0.5 text-amber-900 rounded font-black tracking-wide uppercase">PRONTO</span>
                     </div>
-
+                    
+                    {/* CONTAINER DA DIREITA COM O STATUS E AS DATAS ATUALIZADAS */}
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <span className="text-[10px] bg-amber-100 px-2 py-0.5 text-amber-900 rounded font-black tracking-wide uppercase">
+                        PRONTO
+                      </span>
+                      <span className="text-xs font-black text-stone-600 block leading-tight">
+                        {pedido.hora || "00:00"}
+                      </span>
+                      <span className="text-[10px] text-stone-400 block leading-tight">
+                        {pedido.timestamp?.toDate 
+                          ? pedido.timestamp.toDate().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) 
+                          : new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                      </span>
+                    </div>
+                  </div>
+                  
                     {pedido.observacao && (
                       <p className="bg-amber-50 text-[#3d2314] text-xs p-2.5 rounded-lg border border-amber-200 mb-3 italic font-semibold">
                         📢 Obs Geral: "{pedido.observacao}"
