@@ -27,29 +27,30 @@ export default function GraficoVendas() {
       orderBy("timestamp", "asc")
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+       const unsubscribe = onSnapshot(q, (snapshot) => {
       const pedidos = snapshot.docs.map(doc => doc.data());
       
       const hoje = new Date();
+      hoje.setHours(23, 59, 59, 999); // Garante a captação do dia atual completo
+      
       const diasSemanaTexto = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
       
-      // 1. Inicializa a estrutura fixa dos últimos 7 dias retroativos à data de hoje
       const mapaUltimos7Dias = {};
       const listaDiasOrdenados = [];
 
+      // 1. GERA OS ÚLTIMOS 7 DIAS BASEADOS NO CALENDÁRIO LOCAL DO BRASIL
       for (let i = 6; i >= 0; i--) {
         const dataRetroativa = new Date();
         dataRetroativa.setDate(hoje.getDate() - i);
         
-        // Chave de agrupamento única por dia do ano (ex: "2026-08-19")
-        const chaveData = dataRetroativa.toISOString().split('T')[0];
+        // Chave local pura sem interferência de fuso horário UTC (Ex: "19/8/2026")
+        const chaveDataLocal = `${dataRetroativa.getDate()}/${dataRetroativa.getMonth() + 1}/${dataRetroativa.getFullYear()}`;
         const nomeDia = diasSemanaTexto[dataRetroativa.getDay()];
         
-        mapaUltimos7Dias[chaveData] = { dia: nomeDia, vendas: 0 };
-        listaDiasOrdenados.push(chaveData);
+        mapaUltimos7Dias[chaveDataLocal] = { dia: nomeDia, vendas: 0 };
+        listaDiasOrdenados.push(chaveDataLocal);
       }
 
-      // Variáveis para calcular a variação percentual contra a semana retrasada
       let totalSemanaAtual = 0;
       let totalSemanaAnterior = 0;
 
@@ -61,14 +62,15 @@ export default function GraficoVendas() {
       inicioSemanaAnterior.setDate(hoje.getDate() - 13);
       inicioSemanaAnterior.setHours(0,0,0,0);
 
-      // 2. Varre os pedidos compilando os valores financeiros baseados no faturamento real
+      // 2. COMPILA O FATURAMENTO CRUTANDO AS CHAVES LOCAIS
       pedidos.forEach((pedido) => {
         if (!pedido.timestamp) return;
         
         const dataPedido = pedido.timestamp.toDate ? pedido.timestamp.toDate() : new Date(pedido.timestamp);
-        const chavePedido = dataPedido.toISOString().split('T')[0];
+        
+        // Monta a mesma estrutura de chave local para checagem idêntica
+        const chavePedidoLocal = `${dataPedido.getDate()}/${dataPedido.getMonth() + 1}/${dataPedido.getFullYear()}`;
 
-        // Regra contábil: O pedido deve estar pago ou processado operacionalmente
         const estaPago = pedido.pago === true || pedido.pago === "true";
         const statusValido = ["Pendente", "Preparando", "Aguardando Garçom", "Pronto", "Entregue", "Finalizado"].includes(pedido.status);
 
@@ -78,12 +80,11 @@ export default function GraficoVendas() {
             return soma + (Number(preco) * Number(item.quantidade));
           }, 0) || 0;
 
-          // Se cair dentro do range dos últimos 7 dias, soma no gráfico
-          if (mapaUltimos7Dias[chavePedido] !== undefined) {
-            mapaUltimos7Dias[chavePedido].vendas += totalPedido;
+          // Se a data do pedido bater com a janela dos últimos 7 dias locais, injeta no gráfico
+          if (mapaUltimos7Dias[chavePedidoLocal] !== undefined) {
+            mapaUltimos7Dias[chavePedidoLocal].vendas += totalPedido;
           }
 
-          // Computação de tendência de mercado (Semana Atual vs Semana Anterior)
           if (dataPedido >= inicioSemanaAtual) {
             totalSemanaAtual += totalPedido;
           } else if (dataPedido >= inicioSemanaAnterior && dataPedido < inicioSemanaAtual) {
@@ -92,11 +93,9 @@ export default function GraficoVendas() {
         }
       });
 
-      // 3. Renderiza o array final estruturado para o Recharts ler
       const dadosFinaisRecharts = listaDiasOrdenados.map(chave => mapaUltimos7Dias[chave]);
       setDadosGrafico(dadosFinaisRecharts);
 
-      // 4. Cálculo matemático real da variação de desempenho do SaaS
       if (totalSemanaAnterior > 0) {
         const diff = ((totalSemanaAtual - totalSemanaAnterior) / totalSemanaAnterior) * 100;
         setVariacaoPercentual(`${Math.abs(Math.round(diff))}%`);
