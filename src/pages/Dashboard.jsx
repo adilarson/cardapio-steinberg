@@ -265,7 +265,9 @@ export default function Dashboard() {
             <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
               <div>
                 <h2 className="text-xl font-bold text-stone-800">Conciliação Contábil & Fechamento de Caixa</h2>
-                <p className="text-xs text-stone-500">Auditoria de recebimentos em tempo real para o período selecionado</p>
+                <p className="text-xs text-stone-500">
+                Auditoria de recebimentos em tempo real para o período fiscal de: <strong className="text-stone-700">{String(mesSelecionado).padStart(2, "0")}/{anoSelecionado}</strong>
+               </p>
               </div>
               <button 
                 onClick={() => { setModalCaixaAberto(false); setCaixaConciliado(false); }} 

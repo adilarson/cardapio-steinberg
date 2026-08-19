@@ -102,7 +102,14 @@ export default function Cozinha() {
                     )}
                   </div>
                 </div>
-                <span className="text-xs text-stone-400">{pedido.hora}</span>
+               <div className="text-right">
+               <span className="text-xs font-bold text-stone-400 block">{pedido.hora || "00:00"}</span>
+               <span className="text-[10px] text-stone-500 block">
+                {pedido.timestamp?.toDate 
+               ? pedido.timestamp.toDate().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) 
+               : new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+              </span>
+              </div>
               </div>
 
               {pedido.observacao && (
