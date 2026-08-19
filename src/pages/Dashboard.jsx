@@ -280,6 +280,105 @@ export default function Dashboard() {
     janelaImpressao.print();
   };
 
+  // GERADOR DE RELATÓRIO PDF PARA DRE MENSAL (ENVIO CONTADOR)
+  const exportarPdfDreMensal = () => {
+    const nomeEmpresa = empresa?.nome || "Restaurante Cloud";
+    const periodoFormatado = `${String(mesSelecionado).padStart(2, "0")}/${anoSelecionado}`;
+    
+    const fatBruto = contabilidade.faturamentoCalculado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const custosTotais = totalDespesas.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const liquido = lucroLiquido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    // Gera as linhas da tabela de despesas dinamicamente baseada nos inputs salvos no Firebase
+    let linhasDespesasHtml = "";
+    if (despesas.length === 0) {
+      linhasDespesasHtml = `<tr><td colspan="3" style="text-align: center; color: #78716c; py: 20px;">Nenhum custo ou despesa operacional lançado para este período.</td></tr>`;
+    } else {
+      despesas.forEach((d) => {
+        const valorFormatado = Number(d.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        linhasDespesasHtml += `
+          <tr>
+            <td><strong>${d.descricao}</strong></td>
+            <td><span style="background: #e7e5e4; padding: 3px 8px; border-radius: 4px; font-size: 11px;">${d.categoria}</span></td>
+            <td class="font-mono text-red font-bold">-${valorFormatado}</td>
+          </tr>
+        `;
+      });
+    }
+
+    const janelaImpressao = window.open("", "_blank");
+    janelaImpressao.document.write(`
+      <html>
+        <head>
+          <title>DRE Mensal - ${nomeEmpresa}</title>
+          <style>
+            body { font-family: sans-serif; color: #1c1917; padding: 40px; margin: 0; line-height: 1.5; }
+            .header { border-bottom: 2px solid #e7e5e4; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 24px; font-weight: bold; margin: 0; text-transform: uppercase; }
+            .subtitle { font-size: 12px; color: #78716c; margin-top: 5px; }
+            .section-title { font-size: 12px; font-weight: bold; color: #78716c; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; margin-bottom: 10px; }
+            
+            .summary-box { background: #1c1917; color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; }
+            .summary-item { text-align: center; flex: 1; }
+            .summary-item:not(:last-child) { border-right: 1px solid #444; }
+            .summary-label { font-size: 11px; color: #a8a29e; text-transform: uppercase; margin-bottom: 5px; }
+            .summary-value { font-family: monospace; font-size: 20px; font-weight: bold; }
+            
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e7e5e4; font-size: 14px; }
+            th { background: #f5f5f4; color: #78716c; font-size: 11px; text-transform: uppercase; }
+            .text-red { color: #dc2626; }
+            .font-mono { font-family: monospace; }
+            .font-bold { font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="title">${nomeEmpresa}</h1>
+            <div class="subtitle">DEMONSTRATIVO DE RESULTADO DO EXERCÍCIO (DRE MENSAL Avançado)</div>
+            <div class="subtitle">Competência Fiscal: ${periodoFormatado} | Status de Fechamento: Consolidadado</div>
+          </div>
+
+          <div class="section-title">Resumo do Fluxo Contábil</div>
+          <div class="summary-box">
+            <div class="summary-item">
+              <div class="summary-label">(+) Faturamento Bruto</div>
+              <div class="summary-value" style="color: #34d399;">${fatBruto}</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">(-) Custos Operacionais</div>
+              <div class="summary-value" style="color: #fb7185;">-${custosTotais}</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">(=) Resultado Líquido</div>
+              <div class="summary-value" style="color: #fbbf24;">${liquido}</div>
+            </div>
+          </div>
+
+          <div class="section-title">Discriminação de Lançamentos / Custos Declarados</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Descrição do Gasto</th>
+                <th>Classificação Contábil</th>
+                <th>Valor Deduzido</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${linhasDespesasHtml}
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 80px; border-top: 1px dashed #78716c; padding-top: 10px; font-size: 11px; color: #78716c; text-align: center;">
+            Este documento constitui um espelho gerencial DRE emitido via plataforma SaaS. Destinado a conciliação e escrituração contábil.
+          </div>
+        </body>
+      </html>
+    `);
+    janelaImpressao.document.close();
+    janelaImpressao.print();
+  };
+
    return (
     <div className="min-h-screen bg-stone-100 p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -377,17 +476,22 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-                       {/* Header Modal - Fechamento de Caixa Diário */}
+                                  {/* Cabeçalho do Modal DRE Atualizado */}
             <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50">
               <div>
-                <h2 className="text-xl font-bold text-stone-800">Fechamento de Caixa & Auditoria Diária</h2>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  Conferência de recebimentos operacionais para o dia:{" "}
-                  <strong className="text-amber-800">
-                    {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                  </strong>
-                </p>
+                <h2 className="text-xl font-bold text-stone-800">DRE Mensal Avançado & Lançamento de Custos</h2>
+                <p className="text-xs text-stone-500">Balanço do período: {String(mesSelecionado).padStart(2, "0")}/{anoSelecionado}</p>
               </div>
+              
+              {/* Botão de Exportação Fiscal para o Contador */}
+              <button
+                onClick={() => exportarPdfDreMensal()}
+                className="bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold px-4 py-2.5 rounded-xl shadow-sm text-xs uppercase tracking-wider transition flex items-center gap-2 h-fit"
+              >
+                📊 Exportar DRE para Contador
+              </button>
+            </div>
+
               
               {/* Botão de Exportação do PDF do Turno */}
               <button
@@ -396,7 +500,6 @@ export default function Dashboard() {
               >
                 🖨️ Exportar PDF do Caixa
               </button>
-            </div>
 
             {/* Corpo Técnico com a exibição dos valores corrigida */}
             <div className="p-6 overflow-y-auto space-y-6 bg-stone-50/50">
@@ -532,13 +635,25 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-            <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                       {/* Header Modal - DRE Mensal Avançado */}
+            <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50">
               <div>
                 <h2 className="text-xl font-bold text-stone-800">DRE Mensal Avançado & Lançamento de Custos</h2>
-                <p className="text-xs text-stone-500">
-               Balanço do período: {String(mesSelecionado).padStart(2, "0")}/{anoSelecionado}</p>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Balanço operacional consolidado do período:{" "}
+                  <strong className="text-amber-800">
+                    {String(mesSelecionado).padStart(2, "0")}/{anoSelecionado}
+                  </strong>
+                </p>
               </div>
-              <button onClick={() => setModalDreAberto(false)} className="text-stone-400 hover:text-stone-600 text-xl font-bold p-1">✕</button>
+              
+              {/* Botão de Exportação Fiscal para o Contador */}
+              <button
+                onClick={() => exportarPdfDreMensal()}
+                className="bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold px-4 py-2.5 rounded-xl shadow-sm text-xs uppercase tracking-wider transition flex items-center gap-2 h-fit"
+              >
+                📊 Exportar DRE para Contador
+              </button>
             </div>
 
             <div className="p-6 overflow-y-auto grid md:grid-cols-2 gap-6 bg-stone-50/50">
