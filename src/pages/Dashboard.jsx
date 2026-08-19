@@ -146,6 +146,7 @@ export default function Dashboard() {
     }
   };
 
+
   const totalDespesas = despesas.reduce((soma, d) => soma + Number(d.valor || 0), 0);
   const lucroLiquido = contabilidade.faturamentoCalculado - totalDespesas;
 
@@ -168,7 +169,114 @@ export default function Dashboard() {
       </div>
     );
   }
+   
+   const exportarPdfCaixaDiario = () => {
+    const dataFormatada = new Date().toLocaleDateString("pt-BR");
+    const pixSis = contabilidade.pix.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const cartaoSis = contabilidade.cartao.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const dinheiroSis = contabilidade.dinheiro.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const faturamentoTotal = contabilidade.faturamentoCalculado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+    const pixDec = (Number(valoresDeclarados.pix) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const cartaoDec = (Number(valoresDeclarados.cartao) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const dinheiroDec = (Number(valoresDeclarados.dinheiro) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    const discPix = diferencas.pix === 0 ? "✓ Sem divergências" : diferencas.pix.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const discCartao = diferencas.cartao === 0 ? "✓ Sem divergências" : diferencas.cartao.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const discDinheiro = diferencas.dinheiro === 0 ? "✓ Sem divergências" : diferencas.dinheiro.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    const janelaImpressao = window.open("", "_blank");
+    janelaImpressao.document.write(`
+      <html>
+        <head>
+          <title>Fechamento de Caixa - \${empresa.nome}</title>
+          <style>
+            body { font-family: sans-serif; color: #1c1917; padding: 40px; margin: 0; line-height: 1.5; }
+            .header { border-bottom: 2px solid #e7e5e4; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 24px; font-weight: bold; margin: 0; text-transform: uppercase; }
+            .subtitle { font-size: 12px; color: #78716c; margin-top: 5px; }
+            .section-title { font-size: 12px; font-weight: bold; color: #78716c; text-transform: uppercase; letter-spacing: 1px; margin-top: 30px; margin-bottom: 10px; }
+            .grid { display: grid; grid-template-cols: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+            .card { background: #f5f5f4; border: 1px solid #e7e5e4; padding: 15px; border-radius: 8px; }
+            .card-title { font-size: 11px; font-weight: bold; color: #444; margin-bottom: 5px; }
+            .card-value { font-family: monospace; font-size: 16px; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e7e5e4; font-size: 14px; }
+            th { background: #f5f5f4; color: #78716c; font-size: 11px; text-transform: uppercase; }
+            .total-row { font-size: 18px; font-weight: bold; background: #1c1917; color: #fff; }
+            .total-row td { padding: 15px; border: none; }
+            .font-mono { font-family: monospace; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 class="title">\${empresa.nome}</h1>
+            <div class="subtitle">RELATÓRIO FISCAL: CONCILIAÇÃO & FECHAMENTO DE CAIXA DIÁRIO</div>
+            <div class="subtitle">Data de Emissão: \${dataFormatada} | Status: Concluído</div>
+          </div>
+
+          <div class="section-title">Valores Registrados no Sistema</div>
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">📱 Total Pix</div>
+              <div class="card-value">\${pixSis}</div>
+            </div>
+            <div class="card">
+              <div class="card-title">💳 Total Cartão</div>
+              <div class="card-value">\${cartaoSis}</div>
+            </div>
+            <div class="card">
+              <div class="card-title">💵 Total Dinheiro</div>
+              <div class="card-value">\${dinheiroSis}</div>
+            </div>
+          </div>
+
+          <div class="section-title">Resultado da Auditoria Física / Declarações</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Fluxo Financeiro</th>
+                <th>Registrado no Sistema</th>
+                <th>Declarado em Caixa</th>
+                <th>Discrepância / Quebra</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Pix Bancário</strong></td>
+                <td class="font-mono">\${pixSis}</td>
+                <td class="font-mono">\${pixDec}</td>
+                <td class="font-mono">\${discPix}</td>
+              </tr>
+              <tr>
+                <td><strong>Cartão / Relatório Card</strong></td>
+                <td class="font-mono">\${cartaoSis}</td>
+                <td class="font-mono">\${cartaoDec}</td>
+                <td class="font-mono">\${discCartao}</td>
+              </tr>
+              <tr>
+                <td><strong>Dinheiro em Espécie (Gaveta)</strong></td>
+                <td class="font-mono">\${dinheiroSis}</td>
+                <td class="font-mono">\${dinheiroDec}</td>
+                <td class="font-mono">\${discDinheiro}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="3">Faturamento Bruto do Turno:</td>
+                <td class="font-mono" style="text-align: right;">\${faturamentoTotal}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 60px; border-top: 1px dashed #78716c; padding-top: 10px; font-size: 11px; color: #78716c; text-align: center;">
+            Documento emitido via Dashboard Cloud SaaS Contábil - Operação Blindada.
+          </div>
+        </body>
+      </html>
+    `);
+    janelaImpressao.document.close();
+    janelaImpressao.print();
+  };
+  
    return (
     <div className="min-h-screen bg-stone-100 p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -266,19 +374,24 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-            {/* Header Modal */}
-            <div className="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                       {/* Header Modal - Fechamento de Caixa Diário */}
+            <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50">
               <div>
-                <h2 className="text-xl font-bold text-stone-800">Conciliação Contábil & Fechamento de Caixa</h2>
-                <p className="text-xs text-stone-500">
-                Auditoria de recebimentos em tempo real para o período fiscal de: <strong className="text-stone-700">{String(mesSelecionado).padStart(2, "0")}/{anoSelecionado}</strong>
-               </p>
+                <h2 className="text-xl font-bold text-stone-800">Fechamento de Caixa & Auditoria Diária</h2>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Conferência de recebimentos operacionais para o dia:{" "}
+                  <strong className="text-amber-800">
+                    {new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </strong>
+                </p>
               </div>
-              <button 
-                onClick={() => { setModalCaixaAberto(false); setCaixaConciliado(false); }} 
-                className="text-stone-400 hover:text-stone-600 text-xl font-bold p-1"
+              
+              {/* Botão de Exportação do PDF do Turno */}
+              <button
+                onClick={() => exportarPdfCaixaDiario()}
+                className="bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold px-4 py-2.5 rounded-xl shadow-sm text-xs uppercase tracking-wider transition flex items-center gap-2 h-fit"
               >
-                ✕
+                🖨️ Exportar PDF do Caixa
               </button>
             </div>
 
