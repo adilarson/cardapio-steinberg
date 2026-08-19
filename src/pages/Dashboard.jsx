@@ -170,8 +170,11 @@ export default function Dashboard() {
     );
   }
    
-   const exportarPdfCaixaDiario = () => {
+     // GERADOR DE RELATÓRIO PDF EMISSÃO DIÁRIA DE CAIXA (CORRIGIDO COM CRASE PURA)
+  const exportarPdfCaixaDiario = () => {
     const dataFormatada = new Date().toLocaleDateString("pt-BR");
+    const nomeEmpresa = empresa?.nome || "Restaurante Cloud";
+    
     const pixSis = contabilidade.pix.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     const cartaoSis = contabilidade.cartao.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
     const dinheiroSis = contabilidade.dinheiro.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -189,7 +192,7 @@ export default function Dashboard() {
     janelaImpressao.document.write(`
       <html>
         <head>
-          <title>Fechamento de Caixa - \${empresa.nome}</title>
+          <title>Fechamento de Caixa - ${nomeEmpresa}</title>
           <style>
             body { font-family: sans-serif; color: #1c1917; padding: 40px; margin: 0; line-height: 1.5; }
             .header { border-bottom: 2px solid #e7e5e4; padding-bottom: 20px; margin-bottom: 30px; }
@@ -210,24 +213,24 @@ export default function Dashboard() {
         </head>
         <body>
           <div class="header">
-            <h1 class="title">\${empresa.nome}</h1>
+            <h1 class="title">${nomeEmpresa}</h1>
             <div class="subtitle">RELATÓRIO FISCAL: CONCILIAÇÃO & FECHAMENTO DE CAIXA DIÁRIO</div>
-            <div class="subtitle">Data de Emissão: \${dataFormatada} | Status: Concluído</div>
+            <div class="subtitle">Data de Emissão: ${dataFormatada} | Status: Concluído</div>
           </div>
 
           <div class="section-title">Valores Registrados no Sistema</div>
           <div class="grid">
             <div class="card">
               <div class="card-title">📱 Total Pix</div>
-              <div class="card-value">\${pixSis}</div>
+              <div class="card-value">${pixSis}</div>
             </div>
             <div class="card">
               <div class="card-title">💳 Total Cartão</div>
-              <div class="card-value">\${cartaoSis}</div>
+              <div class="card-value">${cartaoSis}</div>
             </div>
             <div class="card">
               <div class="card-title">💵 Total Dinheiro</div>
-              <div class="card-value">\${dinheiroSis}</div>
+              <div class="card-value">${dinheiroSis}</div>
             </div>
           </div>
 
@@ -244,25 +247,25 @@ export default function Dashboard() {
             <tbody>
               <tr>
                 <td><strong>Pix Bancário</strong></td>
-                <td class="font-mono">\${pixSis}</td>
-                <td class="font-mono">\${pixDec}</td>
-                <td class="font-mono">\${discPix}</td>
+                <td class="font-mono">${pixSis}</td>
+                <td class="font-mono">${pixDec}</td>
+                <td class="font-mono">${discPix}</td>
               </tr>
               <tr>
                 <td><strong>Cartão / Relatório Card</strong></td>
-                <td class="font-mono">\${cartaoSis}</td>
-                <td class="font-mono">\${cartaoDec}</td>
-                <td class="font-mono">\${discCartao}</td>
+                <td class="font-mono">${cartaoSis}</td>
+                <td class="font-mono">${cartaoDec}</td>
+                <td class="font-mono">${discCartao}</td>
               </tr>
               <tr>
                 <td><strong>Dinheiro em Espécie (Gaveta)</strong></td>
-                <td class="font-mono">\${dinheiroSis}</td>
-                <td class="font-mono">\${dinheiroDec}</td>
-                <td class="font-mono">\${discDinheiro}</td>
+                <td class="font-mono">${dinheiroSis}</td>
+                <td class="font-mono">${dinheiroDec}</td>
+                <td class="font-mono">${discDinheiro}</td>
               </tr>
               <tr class="total-row">
                 <td colspan="3">Faturamento Bruto do Turno:</td>
-                <td class="font-mono" style="text-align: right;">\${faturamentoTotal}</td>
+                <td class="font-mono" style="text-align: right;">${faturamentoTotal}</td>
               </tr>
             </tbody>
           </table>
@@ -276,7 +279,7 @@ export default function Dashboard() {
     janelaImpressao.document.close();
     janelaImpressao.print();
   };
-  
+
    return (
     <div className="min-h-screen bg-stone-100 p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
