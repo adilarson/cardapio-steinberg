@@ -14,28 +14,34 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
   const [metodoSelecionado, setMetodoSelecionado] = useState("");
   const [processandoPagamento, setProcessandoPagamento] = useState(false);
 
-    useEffect(() => {
+        useEffect(() => {
     const idRestaurante = empresa?.id || restaurantSlug;
-    if (!idRestaurante || !numeroMesa) return;
+    
+    // Captura o identificador da mesa (Propriedade, URL ou localStorage)
+    const mesaAtual = numeroMesa || localStorage.getItem("mesa_atual") || "Principal";
+    
+    if (!idRestaurante) return;
 
-    // Forçamos a busca estrita APENAS pela mesa atual para garantir isolamento total de dados
-    const q = query(
-      collection(db, "restaurantes", idRestaurante, "pedidos"),
-      where("mesa", "==", String(numeroMesa).trim()) // Segurança para bater letras e números
-    );
+    const nomeMesaBusca = String(mesaAtual).trim().toLowerCase();
+
+    // Buscamos a coleção inteira de pedidos ativos do restaurante
+    const q = query(collection(db, "restaurantes", idRestaurante, "pedidos"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let itensAcumulados = [];
       
-      snapshot.docs.forEach((doc) => {
-        const dadosPedido = doc.data();
+      snapshot.docs.forEach((documento) => {
+        const dadosPedido = documento.data();
         
-        // FILTRO EM MEMÓRIA: Só traz para o extrato os pedidos que NÃO estão finalizados
-        if (dadosPedido.status !== "Finalizado") {
+        // Normaliza a mesa salva no banco para comparação segura
+        const nomeMesaBanco = String(dadosPedido.mesa || "").trim().toLowerCase();
+        
+        // SÓ ENTRA SE: For a mesma mesa E o status NÃO for "Finalizado"
+        if (nomeMesaBanco === nomeMesaBusca && dadosPedido.status !== "Finalizado") {
           if (dadosPedido.itens) {
             const itensComId = dadosPedido.itens.map(item => ({
               ...item,
-              pedidoDocId: doc.id
+              pedidoDocId: documento.id
             }));
             itensAcumulados = [...itensAcumulados, ...itensComId];
           }
@@ -45,7 +51,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
       setPedidosConsumidos(itensAcumulados);
       setLoading(false);
     }, (error) => {
-      console.error("Erro ao carregar extrato isolado da mesa:", error);
+      console.error("Erro ao carregar extrato isolado:", error);
       setLoading(false);
     });
 
