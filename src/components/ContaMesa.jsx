@@ -14,7 +14,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
   const [metodoSelecionado, setMetodoSelecionado] = useState("");
   const [processandoPagamento, setProcessandoPagamento] = useState(false);
 
-        useEffect(() => {
+      useEffect(() => {
     const idRestaurante = empresa?.id || restaurantSlug;
     
     // Captura o identificador da mesa (Propriedade, URL ou localStorage)
@@ -24,7 +24,7 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
 
     const nomeMesaBusca = String(mesaAtual).trim().toLowerCase();
 
-    // Buscamos a coleção inteira de pedidos ativos do restaurante
+    // Buscamos a coleção inteira de pedidos do restaurante
     const q = query(collection(db, "restaurantes", idRestaurante, "pedidos"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -36,8 +36,11 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
         // Normaliza a mesa salva no banco para comparação segura
         const nomeMesaBanco = String(dadosPedido.mesa || "").trim().toLowerCase();
         
-        // SÓ ENTRA SE: For a mesma mesa E o status NÃO for "Finalizado"
-        if (nomeMesaBanco === nomeMesaBusca && dadosPedido.status !== "Finalizado") {
+        // CORREÇÃO LOGICA SAAS: Verifica se o pedido já foi pago (booleano ou string)
+        const jáEstaPago = dadosPedido.pago === true || dadosPedido.pago === "true";
+        
+        // SÓ ENTRA NO EXTRATO SE: For a mesma mesa E NÃO estiver finalizado E NÃO estiver pago ainda
+        if (nomeMesaBanco === nomeMesaBusca && dadosPedido.status !== "Finalizado" && !jáEstaPago) {
           if (dadosPedido.itens) {
             const itensComId = dadosPedido.itens.map(item => ({
               ...item,
@@ -57,7 +60,6 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
 
     return () => unsubscribe();
   }, [empresa?.id, restaurantSlug, numeroMesa]);
-
 
   const totalGeral = pedidosConsumidos.reduce((acc, item) => {
     const precoItem = item.precoFinal ?? item.preco ?? 0;
