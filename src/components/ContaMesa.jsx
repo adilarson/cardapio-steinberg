@@ -14,37 +14,44 @@ export default function ContaMesa({ restaurantSlug, numeroMesa, onClose }) {
   const [metodoSelecionado, setMetodoSelecionado] = useState("");
   const [processandoPagamento, setProcessandoPagamento] = useState(false);
 
-  useEffect(() => {
+    useEffect(() => {
     const idRestaurante = empresa?.id || restaurantSlug;
     if (!idRestaurante || !numeroMesa) return;
 
+    // Forçamos a busca estrita APENAS pela mesa atual para garantir isolamento total de dados
     const q = query(
       collection(db, "restaurantes", idRestaurante, "pedidos"),
-      where("mesa", "==", numeroMesa),
-      where("status", "!=", "Finalizado")
+      where("mesa", "==", String(numeroMesa).trim()) // Segurança para bater letras e números
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let itensAcumulados = [];
+      
       snapshot.docs.forEach((doc) => {
         const dadosPedido = doc.data();
-        if (dadosPedido.itens) {
-          const itensComId = dadosPedido.itens.map(item => ({
-            ...item,
-            pedidoDocId: doc.id
-          }));
-          itensAcumulados = [...itensAcumulados, ...itensComId];
+        
+        // FILTRO EM MEMÓRIA: Só traz para o extrato os pedidos que NÃO estão finalizados
+        if (dadosPedido.status !== "Finalizado") {
+          if (dadosPedido.itens) {
+            const itensComId = dadosPedido.itens.map(item => ({
+              ...item,
+              pedidoDocId: doc.id
+            }));
+            itensAcumulados = [...itensAcumulados, ...itensComId];
+          }
         }
       });
+      
       setPedidosConsumidos(itensAcumulados);
       setLoading(false);
     }, (error) => {
-      console.error("Erro ao carregar extrato da mesa:", error);
+      console.error("Erro ao carregar extrato isolado da mesa:", error);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, [empresa?.id, restaurantSlug, numeroMesa]);
+
 
   const totalGeral = pedidosConsumidos.reduce((acc, item) => {
     const precoItem = item.precoFinal ?? item.preco ?? 0;
