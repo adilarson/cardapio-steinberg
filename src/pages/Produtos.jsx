@@ -189,7 +189,7 @@ export default function Produtos() {
       alert("Não foi possível excluir o produto.");
     }
   };
-  // ESTADOS E FUNÇÕES DE EDIÇÃO DENTRO DE PRODUTOS.JSX
+   // LÓGICA DO MÓDULO DE EDIÇÃO (COLAR ABAIXO DA FUNÇÃO EXCLUIR)
   const [produtoEditando, setProdutoEditando] = useState(null);
   const [nomeEdit, setNomeEdit] = useState("");
   const [precoEdit, setPrecoEdit] = useState("");
@@ -204,12 +204,11 @@ export default function Produtos() {
     setCategoriaEdit(prod.categoria || "");
   };
 
-  const atualizarProduto = async (e) => {
-    e.preventDefault();
+  const salvarEdicaoProduto = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!empresa?.id || !produtoEditando) return;
 
     try {
-      // Importações necessárias do firestore presumidas no topo (doc, updateDoc, db)
       const docRef = doc(db, "restaurantes", empresa.id, "produtos", produtoEditando);
       await updateDoc(docRef, {
         nome: nomeEdit,
@@ -219,7 +218,7 @@ export default function Produtos() {
         timestampAtualizacao: new Date()
       });
       
-      // Atualiza a listagem na tela local sem precisar recarregar a página
+      // Atualiza a tabela na tela localmente em tempo real
       setProdutos((prev) =>
         prev.map((p) =>
           p.id === produtoEditando
@@ -229,10 +228,13 @@ export default function Produtos() {
       );
       
       setProdutoEditando(null);
+      console.log("Sucesso: Produto atualizado!");
     } catch (error) {
-      console.error("Erro ao atualizar produto:", error);
+      console.error("Erro crítico ao atualizar produto no Firebase:", error);
     }
   };
+
+
 
   const alternarDisponibilidade = async (produto) => {
     try {
@@ -679,8 +681,83 @@ export default function Produtos() {
               </table>
 
             </div>
-
           )}
+ {produtoEditando && (
+      <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-stone-200 text-stone-800">
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-100">
+            <h3 className="text-lg font-bold text-stone-800">📝 Editar Produto</h3>
+            <button 
+              type="button" 
+              onClick={() => setProdutoEditando(null)}
+              className="text-stone-400 hover:text-stone-600 font-bold text-lg"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-1">Nome do Item</label>
+              <input 
+                type="text" 
+                value={nomeEdit} 
+                onChange={(e) => setNomeEdit(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 px-4 py-2.5 rounded-xl text-sm font-semibold focus:outline-amber-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-1">Preço (R$)</label>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={precoEdit} 
+                  onChange={(e) => setPrecoEdit(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-300 px-4 py-2.5 rounded-xl text-sm font-mono font-bold focus:outline-amber-600"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-1">Categoria</label>
+                <input 
+                  type="text" 
+                  value={categoriaEdit} 
+                  onChange={(e) => setCategoriaEdit(e.target.value)}
+                  className="w-full bg-stone-50 border border-stone-300 px-4 py-2.5 rounded-xl text-sm font-semibold focus:outline-amber-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-1">Ingredientes / Descrição</label>
+              <textarea 
+                value={descricaoEdit} 
+                onChange={(e) => setDescricaoEdit(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 px-4 py-2.5 rounded-xl text-sm focus:outline-amber-600 h-20 resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button 
+                type="button"
+                onClick={() => salvarEdicaoProduto()}
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition shadow-md text-center"
+              >
+                ✓ Salvar Alterações
+              </button>
+              <button 
+                type="button"
+                onClick={() => setProdutoEditando(null)}
+                className="bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold px-5 py-3 rounded-xl text-xs uppercase tracking-wider transition"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
 
         </div>
 
