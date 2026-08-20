@@ -6,6 +6,8 @@ import {
   atualizarProduto,
   excluirProduto
 } from "../services/produtosService";
+import { db } from "../firebase"; 
+import { doc, updateDoc } from "firebase/firestore";
 
 export default function Produtos() {
   
@@ -648,21 +650,26 @@ export default function Produtos() {
 
                       </td>
 
-                                          <td className="p-4 text-center flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => iniciarEdicaoProduto(produto)}
-                        className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1 rounded-xl text-xs uppercase transition"
-                      >
-                        📝 Editar
+                     {/* Subistitua a coluna de Ações por esta versão estruturada */}
+                     <td className="p-4 text-center">
+                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                     <button
+                      type="button"
+                      onClick={() => iniciarEdicaoProduto(produto)}
+                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded-xl text-xs uppercase tracking-wide transition shadow-sm"
+                  >
+                     📝 Editar
                       </button>
-
+    
                       <button
-                        onClick={() => excluir(produto.id)}
-                        className="text-red-600 hover:text-red-800 font-bold text-sm"
-                      >
-                        Excluir
-                      </button>
-                    </td>
+                     type="button"
+                     onClick={() => excluir(produto.id)}
+                      className="text-red-600 hover:text-red-800 font-bold text-xs uppercase tracking-wide px-2 py-1 transition"
+                     >
+                     Excluir
+                    </button>
+                    </div>
+                   </td>
 
                     </tr>
 
