@@ -8,12 +8,11 @@ import {
 } from "../services/produtosService";
 
 export default function Produtos() {
+  
   const { empresa } = useEmpresa();
-
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-
   const [novoProduto, setNovoProduto] = useState({
     nome: "",
     categoria: "",
@@ -188,6 +187,50 @@ export default function Produtos() {
       alert("Não foi possível excluir o produto.");
     }
   };
+  // ESTADOS E FUNÇÕES DE EDIÇÃO DENTRO DE PRODUTOS.JSX
+  const [produtoEditando, setProdutoEditando] = useState(null);
+  const [nomeEdit, setNomeEdit] = useState("");
+  const [precoEdit, setPrecoEdit] = useState("");
+  const [descricaoEdit, setDescricaoEdit] = useState("");
+  const [categoriaEdit, setCategoriaEdit] = useState("");
+
+  const iniciarEdicaoProduto = (prod) => {
+    setProdutoEditando(prod.id);
+    setNomeEdit(prod.nome || "");
+    setPrecoEdit(prod.preco || "");
+    setDescricaoEdit(prod.descricao || "");
+    setCategoriaEdit(prod.categoria || "");
+  };
+
+  const atualizarProduto = async (e) => {
+    e.preventDefault();
+    if (!empresa?.id || !produtoEditando) return;
+
+    try {
+      // Importações necessárias do firestore presumidas no topo (doc, updateDoc, db)
+      const docRef = doc(db, "restaurantes", empresa.id, "produtos", produtoEditando);
+      await updateDoc(docRef, {
+        nome: nomeEdit,
+        preco: Number(precoEdit) || 0,
+        descricao: descricaoEdit,
+        categoria: categoriaEdit,
+        timestampAtualizacao: new Date()
+      });
+      
+      // Atualiza a listagem na tela local sem precisar recarregar a página
+      setProdutos((prev) =>
+        prev.map((p) =>
+          p.id === produtoEditando
+            ? { ...p, nome: nomeEdit, preco: Number(precoEdit), descricao: descricaoEdit, categoria: categoriaEdit }
+            : p
+        )
+      );
+      
+      setProdutoEditando(null);
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+    }
+  };
 
   const alternarDisponibilidade = async (produto) => {
     try {
@@ -262,6 +305,35 @@ export default function Produtos() {
       </div>
     );
   }
+
+    const iniciarEdicaoProduto = (produto) => {
+    setProdutoEditando(produto.id);
+    setNomeEdit(produto.nome || "");
+    setPrecoEdit(produto.preco || "");
+    setDescricaoEdit(produto.descricao || "");
+    setCategoriaEdit(produto.categoria || "");
+  };
+
+  const atualizarProduto = async (e) => {
+    e.preventDefault();
+    const idRestaurante = empresa?.id; // Verifique se seu arquivo usa 'empresa.id' ou passe o ID dinâmico dele
+    if (!idRestaurante || !produtoEditando) return;
+
+    try {
+      const docRef = doc(db, "restaurantes", idRestaurante, "produtos", produtoEditando);
+      await updateDoc(docRef, {
+        nome: nomeEdit,
+        preco: Number(precoEdit) || 0,
+        descricao: descricaoEdit,
+        categoria: categoriaEdit,
+        timestampAtualizacao: new Date()
+      });
+      setProdutoEditando(null);
+      console.log("Produto atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-stone-100">
@@ -576,18 +648,21 @@ export default function Produtos() {
 
                       </td>
 
-                      <td className="p-4 text-center">
+                                          <td className="p-4 text-center flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => iniciarEdicaoProduto(produto)}
+                        className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1 rounded-xl text-xs uppercase transition"
+                      >
+                        📝 Editar
+                      </button>
 
-                        <button
-                          onClick={() =>
-                            excluir(produto.id)
-                          }
-                          className="text-red-600 hover:text-red-800 font-bold"
-                        >
-                          Excluir
-                        </button>
-
-                      </td>
+                      <button
+                        onClick={() => excluir(produto.id)}
+                        className="text-red-600 hover:text-red-800 font-bold text-sm"
+                      >
+                        Excluir
+                      </button>
+                    </td>
 
                     </tr>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, query, orderBy, onSnapshot, addDoc, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, addDoc, getDocs, where, doc, updateDoc } from "firebase/firestore";
 import DashboardCards from "../components/DashboardCards";
 import ProdutosMaisVendidos from "../components/ProdutosMaisVendidos";
 import UltimosPedidos from "../components/UltimosPedidos";
@@ -28,6 +28,8 @@ export default function Dashboard() {
   const [modalDreAberto, setModalDreAberto] = useState(false);
   const [despesas, setDespesas] = useState([]);
   const [novaDespesa, setNovaDespesa] = useState({ descricao: "", valor: "", categoria: "Insumos" });
+
+
 
   useEffect(() => {
     if (restaurantSlug && (!empresa || empresa.slug !== restaurantSlug)) {
@@ -143,6 +145,33 @@ export default function Dashboard() {
       setNovaDespesa({ descricao: "", valor: "", categoria: "Insumos" });
     } catch (error) {
       console.error("Erro ao salvar despesa:", error);
+    }
+  };
+
+
+
+  // Função reativa para salvar as alterações diretamente no Firebase Firestore
+  const atualizarProduto = async (e) => {
+    e.preventDefault();
+    const idRestaurante = empresa?.id;
+    if (!idRestaurante || !produtoEditando) return;
+
+    try {
+      const docRef = doc(db, "restaurantes", idRestaurante, "produtos", produtoEditando);
+      await updateDoc(docRef, {
+        nome: nomeEdit,
+        preco: Number(precoEdit) || 0,
+        descricao: descricaoEdit,
+        categoria: categoriaEdit,
+        secao: secaoEdit,
+        quantidade: quantidadeEdit,
+        timestampAtualizacao: new Date()
+      });
+
+      setProdutoEditando(null);
+      console.log("Produto atualizado com sucesso no Firebase!");
+    } catch (error) {
+      console.error("Erro crítico ao atualizar produto no Firebase:", error);
     }
   };
 
@@ -476,7 +505,7 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-                                  {/* Cabeçalho do Modal DRE Atualizado */}
+           {/* Cabeçalho do Modal DRE Atualizado */}
             <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50">
               <div>
                 <h2 className="text-xl font-bold text-stone-800">DRE Mensal Avançado & Lançamento de Custos</h2>
@@ -500,7 +529,7 @@ export default function Dashboard() {
               >
                 🖨️ Exportar PDF do Caixa
               </button>
-
+              
             {/* Corpo Técnico com a exibição dos valores corrigida */}
             <div className="p-6 overflow-y-auto space-y-6 bg-stone-50/50">
               
@@ -651,11 +680,11 @@ export default function Dashboard() {
               <button
                 onClick={() => exportarPdfDreMensal()}
                 className="bg-stone-900 hover:bg-stone-800 text-amber-400 font-bold px-4 py-2.5 rounded-xl shadow-sm text-xs uppercase tracking-wider transition flex items-center gap-2 h-fit"
-              >
+             >
                 📊 Exportar DRE para Contador
               </button>
             </div>
-
+            
             <div className="p-6 overflow-y-auto grid md:grid-cols-2 gap-6 bg-stone-50/50">
               {/* Painel Esquerdo: Lançador de Despesas */}
               <form onSubmit={salvarDespesa} className="bg-white border border-stone-200 p-5 rounded-xl space-y-4 h-fit shadow-sm">
