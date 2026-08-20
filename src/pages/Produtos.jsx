@@ -620,15 +620,12 @@ export default function Produtos() {
                       <td className="p-4 text-stone-600">
                         {produto.categoria || "-"}
                       </td>
-
                       <td className="p-4 text-stone-600">
                         {produto.secao || "-"}
                       </td>
-
                       <td className="p-4 font-semibold text-stone-800">
                         {formatarPreco(produto)}
                       </td>
-
                       <td className="p-4">
 
                         <button
@@ -650,27 +647,10 @@ export default function Produtos() {
 
                       </td>
 
-                      <td className="p-4">
-                        <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-wider">
-                          <button
-                            type="button"
-                            onClick={() => iniciarEdicaoProduto(produto)}
-                            className="bg-amber-100 hover:bg-amber-200 text-amber-950 px-3 py-1 rounded-xl transition text-[11px] font-black uppercase tracking-wide shadow-sm"
-                          >
-                            📝 Editar
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => excluir(produto.id)}
-                            className="text-red-600 hover:text-red-800 transition text-[11px] font-black uppercase tracking-wide"
-                          >
-                            Excluir
-                          </button>
-                        </div>
-                      </td>
+                      
 
                     </tr>
+
 
                   ))}
 
