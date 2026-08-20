@@ -652,23 +652,18 @@ export default function Produtos() {
 
                      {/* Subistitua a coluna de Ações por esta versão estruturada */}
                      <td className="p-4 text-center">
-                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                     {/* ADICIONE ESTA LINHA EXATAMENTE ACIMA DO BOTÃO DE EXCLUIR QUE JÁ EXISTE NO SEU ARQUIVO */}
                      <button
                       type="button"
-                      onClick={() => iniciarEdicaoProduto(produto)}
-                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded-xl text-xs uppercase tracking-wide transition shadow-sm"
-                  >
-                     📝 Editar
-                      </button>
-    
-                      <button
-                     type="button"
-                     onClick={() => excluir(produto.id)}
-                      className="text-red-600 hover:text-red-800 font-bold text-xs uppercase tracking-wide px-2 py-1 transition"
-                     >
-                     Excluir
+                      onClick={() => iniciarEdicaoProduto(produto)} 
+                      className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1 rounded-lg text-xs uppercase transition mr-2"
+                   >
+                       📝 Editar
                     </button>
-                    </div>
+
+                    <button onClick={() => excluir(produto.id)} className="text-red-600 font-bold">
+                       Excluir
+                    </button>
                    </td>
 
                     </tr>
